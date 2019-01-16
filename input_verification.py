@@ -8,5 +8,8 @@ def verify_location(user_input):
     response = geocoder.forward(str(user_input))
     collection = response.json()
     n = len(collection['features'])
-    for i in range(0,n):
-        print(collection['features'][i]['place_name'])
+    location_candidates = {}
+    keys = range(n)
+    for i in keys:
+        location_candidates[i] = collection['features'][i]['place_name']
+    return(location_candidates)
