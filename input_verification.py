@@ -1,6 +1,7 @@
-"""This module takes user input location (origin/destination)
-    and calls mapbox geocoder based on user input. Response
-    is then returned to the user for verification."""
+""" This module contains functions which will allow a user's input location
+    (origin/destination) to be communicated to Mapbox and then verified by the
+    user.
+    """
 from mapbox import Geocoder
 from Credentials import mapbox_token
 def location_candidates(user_input):
@@ -28,3 +29,9 @@ def location_candidates(user_input):
     for i in keys:
         candidates[i] = collection['features'][i]['place_name']
     return candidates
+
+def choose_location(candidate_dict):
+    """
+    Presents a dictionary of potential locations to the user, then takes user
+    input to confirm correct choice.
+    """
