@@ -3,3 +3,9 @@
     is then returned to the user for verification."""
 from mapbox import Geocoder
 from Credentials import mapbox_token
+def verify_location(user_input):
+    response = geocoder.forward(str(user_input))
+    collection = response.json()
+    n = len(collection['features'])
+    for i in range(0,n):
+        print(collection['features'][i]['place_name'])
