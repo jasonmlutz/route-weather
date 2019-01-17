@@ -21,7 +21,7 @@ def location_candidates(user_input):
     names for the fetched locations.
     """
     geocoder = Geocoder(access_token=str(mapbox_token))
-    response = geocoder.forward(str(user_input))
+    response = geocoder.forward(str(user_input), limit = 10)
     collection = response.json()
     # The 'features' key tracks the returned data for each possible location.
     # In particular, the 'place_name' of a feature houses the address, and
