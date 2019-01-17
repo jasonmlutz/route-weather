@@ -4,6 +4,7 @@
     """
 from mapbox import Geocoder
 from Credentials import mapbox_token
+import copy
 def location_candidates(user_input):
     """
     Returns a dictionary of possible locations.
@@ -45,11 +46,20 @@ def display_and_verify(candidate_dict):
     # We create a copy of the candidate dictionary to display to the user,
     # appending an option to indicate that no option best meets the user's
     # intended location.
-    displayed_candidate_dict = candidate_dict
+    displayed_candidate_dict = copy.copy(candidate_dict)
     displayed_candidate_dict[str(len(candidate_dict)+1)] = 'None of these are right.'
     print("\n".join("{}: {}".format(k, v) for k, v in displayed_candidate_dict.items()))
-    user_choice = input('Which option best reflects your intended location? ')
-    #if type(user_choice) -- try/except? still want to catch a need to restart
+    while True:
+        try:
+            user_choice = int(input('Which option best reflects your intended location? '))
+        except ValueError:
+            print('Oops! That was not a valid choice. Try again...')
+        else:
+            if user_choice in range(1, len(displayed_candidate_dict)+1):
+                break
+            else:
+                print('Oops! That was not a valid choice. Try again...')
+                continue
     return user_choice
 
 def user_location_selection(candidate_dict):
