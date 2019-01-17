@@ -2,9 +2,9 @@
     (origin/destination) to be communicated to Mapbox and then verified by the
     user.
     """
+import copy
 from mapbox import Geocoder
 from Credentials import mapbox_token
-import copy
 def location_candidates(user_input):
     """
     Returns a dictionary of possible locations.
@@ -47,7 +47,10 @@ def display_and_verify(candidate_dict):
     # appending an option to indicate that no option best meets the user's
     # intended location.
     displayed_candidate_dict = copy.copy(candidate_dict)
-    displayed_candidate_dict[str(len(candidate_dict)+1)] = 'None of these are right.'
+    # Removing this next line for now; will adjust this once I know how the
+    # final veresion will handle needing the user to add more
+    # specificity to the location information.
+    #displayed_candidate_dict[str(len(candidate_dict)+1)] = 'None of these are right.'
     print("\n".join("{}: {}".format(k, v) for k, v in displayed_candidate_dict.items()))
     while True:
         try:
