@@ -17,12 +17,19 @@ def location_candidates(user_input):
 
     Returns:
     candidates (dict): A dictionary encoding the responses from Mapbox based on
-    the user's input. Keys are integers 0, 1, ...; values are the precise place
+    the user's input. Keys are integers 1, 2, ...; values are the precise place
     names for the fetched locations.
     """
     geocoder = Geocoder(access_token=str(mapbox_token))
     response = geocoder.forward(str(user_input))
     collection = response.json()
+    # The 'features' key tracks the returned data for each possible location.
+    # In particular, the 'place_name' of a feature houses the address, and
+    # will be used to display back the the user for verification.  We construct
+    # a dictionary to meaningfully display each place_name to the user.
+    #
+    # For conveinence, the dictionary keys begin at 1; this seems more
+    # intuitive from a ui perspective.
     num_features = len(collection['features'])
     candidates = {}
     keys = range(1, num_features+1)
@@ -35,6 +42,9 @@ def display_and_verify(candidate_dict):
     Presents a dictionary of potential locations to the user.
     """
     print('The following locations were returned based on your entry.')
+    # We create a copy of the candidate dictionary to display to the user,
+    # appending an option to indicate that no option best meets the user's
+    # intended location.
     displayed_candidate_dict = candidate_dict
     displayed_candidate_dict[str(len(candidate_dict)+1)] = 'None of these are right.'
     print("\n".join("{}: {}".format(k, v) for k, v in displayed_candidate_dict.items()))
