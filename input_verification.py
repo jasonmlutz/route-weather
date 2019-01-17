@@ -25,13 +25,27 @@ def location_candidates(user_input):
     collection = response.json()
     num_features = len(collection['features'])
     candidates = {}
-    keys = range(num_features)
+    keys = range(1, num_features+1)
     for i in keys:
-        candidates[i] = collection['features'][i]['place_name']
+        candidates[i] = collection['features'][i-1]['place_name']
     return candidates
 
-def choose_location(candidate_dict):
+def display_and_verify(candidate_dict):
     """
-    Presents a dictionary of potential locations to the user, then takes user
-    input to confirm correct choice.
+    Presents a dictionary of potential locations to the user.
     """
+    print('The following locations were returned based on your entry.')
+    displayed_candidate_dict = candidate_dict
+    displayed_candidate_dict[str(len(candidate_dict)+1)] = 'None of these are right.'
+    print("\n".join("{}: {}".format(k, v) for k, v in displayed_candidate_dict.items()))
+    user_choice = input('Which option best reflects your intended location? ')
+    #if type(user_choice) -- try/except? still want to catch a need to restart
+    return user_choice
+
+def user_location_selection(candidate_dict):
+    """
+    Takes a numerical input from the user for the purpose of verifying
+    location input.
+    """
+    return candidate_dict
+    # maybe this isn't needed? display_and_verify is looking promising
