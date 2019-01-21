@@ -11,17 +11,28 @@ response_origin = geocoder.forward(str(origin))
 origin_proper = response_origin.json()['features'][0]
 response_destination = geocoder.forward(str(destination))
 destination_proper= response_destination.json()['features'][0]
-response = service.directions([origin_proper, destination_proper], 'mapbox/driving', steps='true')
-route = response.geojson()
+response = service.directions([origin_proper, destination_proper], profile='mapbox/driving', steps=True)
+route = response.json()
 route.keys()
-route['type']
-len(route['features'])
-route['features'][0]
-type(route['features'][0])
-route['features'][0].keys()
-len(route['features'][0]['geometry'])
-route['features'][0]['geometry'].keys()
-len(route['features'][0]['geometry']['coodinates'])
+route['routes']
+len(route['routes'])
+type(route['routes'])
+type(route['routes'][0])
+route['routes'][0].keys()
+route['routes'][0]['geometry']
+type(route['routes'][0]['legs'])
+len(route['routes'][0]['legs'])
+type(route['routes'][0]['legs'][0])
+route['routes'][0]['legs'][0].keys()
+route['routes'][0]['legs'][0]['summary']
+route['routes'][0]['legs'][0]['weight']
+route['routes'][0]['legs'][0]['duration']
+type(route['routes'][0]['legs'][0]['steps'])
+len(route['routes'][0]['legs'][0]['steps'])
+route['routes'][0]['legs'][0]['steps'][0]
+route['routes'][0]['legs'][0]['steps'][0].keys()
+for i in range(len(route['routes'][0]['legs'][0]['steps'])): print(route['routes'][0]['legs'][0]['steps'][i]['maneuver']['instruction'])
+for i in range(len(route['routes'][0]['legs'][0]['steps'])): print(route['routes'][0]['legs'][0]['steps'][i]['duration'])
 #from input_verification import location_candidates, display_and_verify
 #d = location_candidates('213 N Main, CA')
 #e = display_and_verify(d)
