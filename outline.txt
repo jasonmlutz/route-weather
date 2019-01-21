@@ -5,3 +5,8 @@ Goal: build independent modules for each task.
 3. (location + time) --> (weather forecast)
 
 Then put it all together.
+
+Progress:
+ - fetch location
+ - verify location
+ - fetch directions
