@@ -9,5 +9,5 @@ origin = '416 Sid Snyder Ave SW, Olympia, WA 98504'
 geocoder = Geocoder(access_token=str(mapbox_token))
 response_origin = geocoder.forward(str(origin))
 coords = response_origin.json()['features'][0]['center']
-olympia = forecast(darksky_token, coords[1], coords[0])
+olympia = forecast(darksky_token, coords[1], coords[0], units = 'us')
 a = olympia['currently']
