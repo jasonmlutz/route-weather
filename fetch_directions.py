@@ -1,15 +1,37 @@
 """This module takes user input origin and destination
     and fetches directions using the mapbox cli api.
     """
-from mapbox import Directions, Geocoder
+from mapbox import Directions
 from Credentials import mapbox_token
-# example origin: 416 Sid Snyder Ave SW, Olympia, WA 98504
-# example destination: 1315 10th St Room B-27, Sacramento, CA 95814
-USER_ORIGIN = input("What is your starting point? ")
-USER_DESTINATION = input("What is your destination? ")
-# a short test print statement
-#print("origin: {}".format(USER_ORIGIN))
-#print("destination: {}".format(USER_DESTINATION))
-geocoder = Geocoder(access_token=str(mapbox_token))
-response_origin = geocoder.forward(USER_ORIGIN)
-response_destination = geocoder.forward(USER_DESTINATION)
+
+def fetch_directions_summary(origin, destination):
+    """
+    Fetch driving directions using Mapbox api.
+
+    Parameters:
+    origin (dict): The origin (starting position) of the desired directions.
+    destination (dict): The destination of the desired directions.
+        Both parameters are of the form obtained by
+        geocoder.forward(str(origin_raw)).json()['features'][0], where origin_raw
+        is a string corresponding to the origin. This is compatible with the
+        returns of the 'input verification' methods.
+
+    Returns:
+    directions_summary (dict): keys are integers 1, 2, 3 corresponding to the
+    number of steps in the fetched directions (arriving at the destination counts
+    as one step); values are tuples (triples) of the form instruction, duration to next
+    route step (in seconds), distance to next route step (in meters).
+    """
+    service = Directions(access_token=str(mapbox_token))
+    response = service.directions([origin, destination], profile='mapbox/driving', steps=True)
+    route = response.json()
+    route_steps = route['routes'][0]['legs'][0]['steps']
+    num_steps = len(route_steps)
+    keys = range(1, num_steps+1)
+    directions_summary = {}
+    for i in keys:
+        instruction = route_steps[i]['maneuver']['instruction']
+        duration = route_steps[i]['duration'] # in seconds
+        distance = route_steps[i]['distance'] # in meters
+        directions_summary[i] = (instruction, duration, distance)
+    return directions_summary
