@@ -30,8 +30,8 @@ def fetch_directions_summary(origin, destination):
     keys = range(1, num_steps+1)
     directions_summary = {}
     for i in keys:
-        instruction = route_steps[i]['maneuver']['instruction']
-        duration = route_steps[i]['duration'] # in seconds
-        distance = route_steps[i]['distance'] # in meters
+        instruction = route_steps[i-1]['maneuver']['instruction']
+        duration = route_steps[i-1]['duration'] # in seconds
+        distance = route_steps[i-1]['distance'] # in meters
         directions_summary[i] = (instruction, duration, distance)
     return directions_summary
