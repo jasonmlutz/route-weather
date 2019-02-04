@@ -36,3 +36,13 @@ for i in range(len(route['routes'][0]['legs'][0]['steps'])): print(route['routes
 #from input_verification import location_candidates, display_and_verify
 #d = location_candidates('213 N Main, CA')
 #e = display_and_verify(d)
+
+origin = '416 Sid Snyder Ave SW, Olympia, WA 98504'
+geocoder = Geocoder(access_token=str(mapbox_token))
+response_origin = geocoder.forward(str(origin))
+coords = response_origin.json()['features'][0]['center']
+#t = datetime.now()
+#t = (t+timedelta(minutes = 120, microseconds = -t.microsecond)).isoformat()
+s = dt(2019, 2, 10, 13, 45, 25)
+a = int(dt.timestamp(s))
+olympia = forecast(darksky_token, coords[1], coords[0], time = a, units = 'us')
