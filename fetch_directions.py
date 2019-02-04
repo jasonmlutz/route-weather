@@ -14,7 +14,7 @@ def fetch_directions_summary(origin, destination):
         Both parameters are of the form obtained by
         geocoder.forward(str(origin_raw)).json()['features'][0], where origin_raw
         is a string corresponding to the origin. This is compatible with the
-        returns of the 'input verification' methods.
+        returns of the 'input_verification.py' methods.
 
     Returns:
     directions_summary (dict): keys are integers 1, 2, 3 corresponding to the
