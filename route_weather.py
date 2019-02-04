@@ -1,9 +1,10 @@
 """This is the first attempt at combining all the necessary methods to fetch
-    and display directions paired with weather data."""
-from Credentials import *
+    and display directions paired with weather data.
+    """
 import copy
-from mapbox import Geocoder
-from Credentials import mapbox_token
+from mapbox import Geocoder, Directions
+from darksky import forecast
+from Credentials import *
 def location_candidates(user_input):
     """
     Returns a dictionary of possible locations.
@@ -64,8 +65,61 @@ def display_and_verify(candidate_dict):
                 print('Oops! That was not a valid choice. Try again...')
                 continue
     return candidate_dict[user_choice]
-#fetch starting location
-#fetch destination
-#fetch departure time + date
-#verify origin and destination
-#fetch directions
+
+def fetch_directions_summary(origin, destination):
+    """
+    Fetch driving directions using Mapbox api.
+
+    Parameters:
+    origin (dict): The origin (starting position) of the desired directions.
+    destination (dict): The destination of the desired directions.
+        Both parameters are of the form obtained by
+        geocoder.forward(str(origin_raw)).json()['features'][0], where origin_raw
+        is a string corresponding to the origin. This is compatible with the
+        returns of the 'input verification' methods.
+
+    Returns:
+    directions_summary (dict): keys are integers 1, 2, 3 corresponding to the
+    number of steps in the fetched directions (arriving at the destination counts
+    as one step); values are tuples (triples) of the form instruction, duration to next
+    route step (in seconds), distance to next route step (in meters).
+    """
+    service = Directions(access_token=str(mapbox_token))
+    response = service.directions([origin, destination], profile='mapbox/driving', steps=True)
+    route = response.json()
+    route_steps = route['routes'][0]['legs'][0]['steps']
+    num_steps = len(route_steps)
+    keys = range(1, num_steps+1)
+    directions_summary = {}
+    for i in keys:
+        instruction = route_steps[i-1]['maneuver']['instruction']
+        duration = route_steps[i-1]['duration'] # in seconds
+        distance = route_steps[i-1]['distance'] # in meters
+        directions_summary[i] = (instruction, duration, distance)
+    return directions_summary
+
+def fetch_weather_summary(latitude, longitude, time):
+    """
+    Returns summary and temperature for a location at a specified time in the
+    past or future.
+
+    Parameters:
+    latitude (float): The latitide of the location.
+    longitude (float): The longitude of the location.
+    time (int/str): The time of the forecast/recorded weather. Either be a UNIX
+        time (that is, seconds since midnight GMT on 1 Jan 1970) or a string
+        formatted as follows: [YYYY]-[MM]-[DD]T[HH]:[MM]:[SS][timezone]. The former
+        option is of the structure optained from int(time.time()); the latter
+        as could be obtained from from datetime.datetime(YYYY, MM, DD,
+        HH, MM, SS).isoformat(). To avoid issues with timezones, we will use the
+        former option to represent time.
+
+    Returns:
+    A tuple. The first element is a short summary of the weather conditions
+        (e.g. sunny, partly cloudy, rain); the second the integer-valued
+        temperature in Fahrenheit (as dictated by the variable units = 'us').
+    """
+    inputs = darksky_token, latitude, longitude
+    wx_full = forecast(*inputs, time=time, units='us')
+    wx_current = wx_full['currently']
+    return wx_current['summary'], int(wx_current['temperature'])
