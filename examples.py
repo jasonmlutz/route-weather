@@ -10,7 +10,7 @@ service = Directions(access_token=str(mapbox_token))
 response_origin = geocoder.forward(str(origin))
 origin_proper = response_origin.json()['features'][0]
 response_destination = geocoder.forward(str(destination))
-destination_proper= response_destination.json()['features'][0]
+destination_proper = response_destination.json()['features'][0]
 response = service.directions([origin_proper, destination_proper], profile='mapbox/driving', steps=True)
 route = response.json()
 route.keys()
