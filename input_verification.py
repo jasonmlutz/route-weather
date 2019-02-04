@@ -5,7 +5,7 @@
 import copy
 from mapbox import Geocoder
 from Credentials import mapbox_token
-def location_candidates(user_input):
+def location_candidates(raw_location):
     """
     Returns a dictionary of possible locations.
 
@@ -22,7 +22,7 @@ def location_candidates(user_input):
     names for the fetched locations.
     """
     geocoder = Geocoder(access_token=str(mapbox_token))
-    response = geocoder.forward(str(user_input), limit=10)
+    response = geocoder.forward(str(raw_location), limit=10)
     collection = response.json()
     # The 'features' key tracks the returned data for each possible location.
     # In particular, the 'place_name' of a feature houses the address, and
