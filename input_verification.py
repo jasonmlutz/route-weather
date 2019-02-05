@@ -4,8 +4,7 @@
     """
 import copy
 from mapbox import Geocoder
-from Credentials import mapbox_token
-def location_candidates(raw_location):
+def location_candidates(raw_location, key):
     """
     Returns a dictionary of possible locations.
 
@@ -21,7 +20,7 @@ def location_candidates(raw_location):
     the user's input. Keys are integers 1, 2, ...; values are the precise place
     names for the fetched locations.
     """
-    geocoder = Geocoder(access_token=str(mapbox_token))
+    geocoder = Geocoder(access_token=key)
     response = geocoder.forward(str(raw_location), limit=10)
     collection = response.json()
     # The 'features' key tracks the returned data for each possible location.
@@ -35,7 +34,7 @@ def location_candidates(raw_location):
     candidates = {}
     keys = range(1, num_features+1)
     for i in keys:
-        candidates[i] = collection['features'][i-1]['place_name']
+        candidates[i] = collection['features'][i-1]
     return candidates
 
 def display_and_verify(candidate_dict):
@@ -52,7 +51,8 @@ def display_and_verify(candidate_dict):
     # the final veresion will handle needing the user to add more specificity
     # to the location information.
     #displayed_candidate_dict[str(len(candidate_dict)+1)] = 'None of these are right.'
-    print("\n".join("{}: {}".format(k, v) for k, v in displayed_candidate_dict.items()))
+    print("\n".join("{}: {}".format(k, v['place_name']) for k, v in displayed_candidate_dict.items()))
+    print('\n')
     while True:
         try:
             user_choice = int(input('Which option best reflects your intended location? '))
@@ -64,4 +64,4 @@ def display_and_verify(candidate_dict):
             else:
                 print('Oops! That was not a valid choice. Try again...')
                 continue
-    return candidate_dict[user_choice]
+    return list(reversed(candidate_dict[user_choice]['center']))
