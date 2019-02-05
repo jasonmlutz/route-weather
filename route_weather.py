@@ -6,7 +6,7 @@ import copy
 import time
 import subprocess as sp
 from datetime import datetime as dt
-# non-standard package imports
+# third-party package imports
 from mapbox import Geocoder, Directions
 from darksky import forecast
 # local imports
