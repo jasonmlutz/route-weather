@@ -11,7 +11,7 @@ def get_departure_time():
     Returns:
     dept_time (str): A .isoformat() style string [YYYY]-[MM]-[DD]T[HH]:[MM]
     """
-    print('Please make a selection to begin: \n 1. Leave now. \n 2. Specify future departure time.')
+    print('\n 1. Leave now. \n 2. Specify future departure time.')
     while True:
         try:
             depart_now = int(input())
