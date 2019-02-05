@@ -64,4 +64,4 @@ def display_and_verify(candidate_dict):
             else:
                 print('Oops! That was not a valid choice. Try again...')
                 continue
-    return list(reversed(candidate_dict[user_choice]['center']))
+    return candidate_dict[user_choice]
