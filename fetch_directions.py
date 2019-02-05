@@ -2,9 +2,8 @@
     and fetches directions using the mapbox cli api.
     """
 from mapbox import Directions
-from Credentials import mapbox_token
 
-def fetch_directions_summary(origin, destination):
+def fetch_directions_summary(origin, destination, key):
     """
     Fetch driving directions using Mapbox api.
 
@@ -19,10 +18,10 @@ def fetch_directions_summary(origin, destination):
     Returns:
     directions_summary (dict): keys are integers 1, 2, 3 corresponding to the
     number of steps in the fetched directions (arriving at the destination counts
-    as one step); values are tuples (triples) of the form instruction, duration to next
+    as one step); values are lists (triples) of the form instruction, duration to next
     route step (in seconds), distance to next route step (in meters).
     """
-    service = Directions(access_token=str(mapbox_token))
+    service = Directions(access_token=key)
     response = service.directions([origin, destination], profile='mapbox/driving', steps=True)
     route = response.json()
     route_steps = route['routes'][0]['legs'][0]['steps']
@@ -33,5 +32,5 @@ def fetch_directions_summary(origin, destination):
         instruction = route_steps[i-1]['maneuver']['instruction']
         duration = route_steps[i-1]['duration'] # in seconds
         distance = route_steps[i-1]['distance'] # in meters
-        directions_summary[i] = (instruction, duration, distance)
+        directions_summary[i] = [instruction, duration, distance]
     return directions_summary
