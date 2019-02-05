@@ -3,9 +3,8 @@
     inputs to the DarkSky api.
     """
 from darksky import forecast
-from Credentials import darksky_token
 
-def fetch_weather_summary(latitude, longitude, time):
+def fetch_weather_summary(latitude, longitude, time, key):
     """
     Returns summary and temperature for a location at a specified time in the
     past or future.
@@ -26,7 +25,7 @@ def fetch_weather_summary(latitude, longitude, time):
         (e.g. sunny, partly cloudy, rain); the second the integer-valued
         temperature in Fahrenheit (as dictated by the variable units = 'us').
     """
-    inputs = darksky_token, latitude, longitude
+    inputs = key, latitude, longitude
     wx_full = forecast(*inputs, time=time, units='us')
     wx_current = wx_full['currently']
-    return wx_current['summary'], int(wx_current['temperature'])
+    return wx_current['summary'], int(wx_current['temperature']), wx_full.time
