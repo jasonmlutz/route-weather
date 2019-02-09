@@ -8,16 +8,24 @@ import subprocess as sp
 # third-party package imports
 from mapbox import Geocoder, Directions
 from darksky import forecast
+# API credentials imports
 from Credentials import mapbox_token, darksky_token
 
 def get_departure_time():
     """ Get user's departure time; either now or in the future.
 
+    This information will be passed to Dark Sky to fetch weather information
+    at origin + departure time; Dark Sky accepts either a Unix time or a string
+    of the form YYYY]-[MM]-[DD]T[HH]:[MM]. In the latter case, if no timezone
+    information is included, the time is interpreted (by Dark Sky)
+    as local time with respect to the location given.
+
     Parameters:
     none
 
     Returns:
-    dept_time (str): A .isoformat() style string [YYYY]-[MM]-[DD]T[HH]:[MM]
+    dept_time (int or str): Current Unix time or a .isoformat() style string
+    [YYYY]-[MM]-[DD]T[HH]:[MM]
     """
     print('\n 1. Leave now. \n 2. Specify future departure time.')
     while True:
@@ -59,23 +67,24 @@ def fetch_directions_summary(origin, destination, key):
         returns of the 'input_verification.py' methods.
 
     Returns:
-    directions_summary (dict): keys are integers 1, 2, 3 corresponding to the
-    number of steps in the fetched directions (arriving at the destination counts
-    as one step); values are lists (triples) of the form instruction, duration to next
-    route step (in seconds), distance to next route step (in meters).
+    directions_summary (dict): keys are integers 0, 1, 2, ... n-1, where n is the
+    number of steps in the directions (arriving at the destination counts
+    as one step); values are lists (four items) of the form instruction, duration
+    to next route step (in seconds), distance to next route step (in meters),
+    location of current step.
     """
     service = Directions(access_token=key)
     response = service.directions([origin, destination], profile='mapbox/driving', steps=True)
     route = response.json()
     route_steps = route['routes'][0]['legs'][0]['steps']
     num_steps = len(route_steps)
-    keys = range(1, num_steps+1)
+    keys = range(num_steps)
     directions_summary = {}
     for i in keys:
-        instruction = route_steps[i-1]['maneuver']['instruction']
-        duration = route_steps[i-1]['duration'] # in seconds
-        distance = route_steps[i-1]['distance'] # in meters
-        location = route_steps[i-1]['maneuver']['location']
+        instruction = route_steps[i]['maneuver']['instruction']
+        duration = route_steps[i]['duration'] # in seconds
+        distance = route_steps[i]['distance'] # in meters
+        location = route_steps[i]['maneuver']['location']
         directions_summary[i] = [instruction, duration, distance, location]
     return directions_summary
 
@@ -89,11 +98,10 @@ def fetch_weather_summary(latitude, longitude, time, key):
     longitude (float): The longitude of the location.
     time (int/str): The time of the forecast/recorded weather. Either be a UNIX
         time (that is, seconds since midnight GMT on 1 Jan 1970) or a string
-        formatted as follows: [YYYY]-[MM]-[DD]T[HH]:[MM]:[SS][timezone]. The former
+        formatted as follows: [YYYY]-[MM]-[DD]T[HH]:[MM]:[SS]. The former
         option is of the structure optained from int(time.time()); the latter
         as could be obtained from from datetime.datetime(YYYY, MM, DD,
-        HH, MM, SS).isoformat(). To avoid issues with timezones, we will use the
-        former option to represent time.
+        HH, MM, SS).isoformat().
 
     Returns:
     A tuple. The first element is a short summary of the weather conditions
@@ -167,41 +175,6 @@ def display_and_verify(candidate_dict):
                 continue
     return candidate_dict[user_choice]
 
-def get_departure_time():
-    """ Get user's departure time; either now or in the future.
-
-    Parameters:
-    none
-
-    Returns:
-    dept_time (str): A .isoformat() style string [YYYY]-[MM]-[DD]T[HH]:[MM]
-    """
-    print('\n 1. Leave now. \n 2. Specify future departure time.')
-    while True:
-        try:
-            depart_now = int(input())
-        except ValueError:
-            print('Oops! That was not a valid choice. Try again...')
-        else:
-            if depart_now in range(1, 3):
-                break
-            else:
-                print('Oops! That was not a valid choice. Try again...')
-                continue
-    if depart_now == 1:
-        departure_datetime = int(time.time())
-    if depart_now == 2:
-        print('Thanks! Let\'s get your departure date and time.')
-        departure_year = input('Please enter your departure year YYYY: ')
-        departure_month = input('Please enter your departure month MM: ')
-        departure_day = input('Please enter your departure day DD: ')
-        departure_hour = input('Please enter your departure hour HH, [0,23]: ')
-        departure_minute = input('Please enter your departure day MM: ')
-        departure_date = departure_year+'-'+departure_month+'-'+departure_day
-        departure_time = departure_hour+':'+departure_minute
-        departure_datetime = departure_date+'T'+departure_time+':00'
-    return departure_datetime
-
 #create calendar month number -> name dictionary
 month_names = dict((v,k) for v,k in enumerate(calendar.month_abbr))
 
@@ -240,7 +213,7 @@ def route_weather():
 
     #create the output dictionary
     directions_output = copy.deepcopy(directions_summary)
-    for i in range(1, len(directions_summary)+1):
+    for i in range(len(directions_summary)):
         del directions_output[i][-1]
 
     # fetch weather at starting point & departure time
@@ -250,11 +223,13 @@ def route_weather():
 
     #fetch the rest of the weather data
     waypoint_time = wx[2] #posix departure_time, timezone aware
-    for i in range (2, len(directions_summary)+1):
+    for i in range (1, len(directions_summary)):
         waypoint_time += round(directions_summary[i][1])
         waypoint_coords = list(reversed(directions_summary[i][3]))
         waypoint_wx = fetch_weather_summary(waypoint_coords[0], waypoint_coords[1], waypoint_time, darksky_token)
         directions_output[i].extend((waypoint_wx[0], waypoint_wx[1]))
 
     print('\nStep #: instruction, time (sec) to next step, distance (meters) to next step, wx, temp')
-    print("\n".join("{}: {}".format(k, v) for k, v in directions_output.items()))
+    print("\n".join("{}: {}".format(k+1, v) for k, v in directions_output.items()))
+
+route_weather()
