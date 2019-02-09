@@ -3,22 +3,49 @@
 # standard imports
 import copy
 import time
-import calendar
+import sys
 import subprocess as sp
+from datetime import datetime as dt
 # third-party package imports
 from mapbox import Geocoder, Directions
 from darksky import forecast
 # API credentials imports
 from Credentials import mapbox_token, darksky_token
 
-def get_departure_time():
+# Print iterations progress --
+# from https://gist.github.com/aubricus/f91fb55dc6ba5557fbab06119420dd6a
+def print_progress(iteration, total, prefix='', suffix='', decimals=1, bar_length=100):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        bar_length  - Optional  : character length of bar (Int)
+    """
+    str_format = "{0:." + str(decimals) + "f}"
+    percents = str_format.format(100 * (iteration / float(total)))
+    filled_length = int(round(bar_length * iteration / float(total)))
+    bar_graphic = '█' * filled_length + '-' * (bar_length - filled_length)
+
+    sys.stdout.write('\r%s |%s| %s%s %s' % (prefix, bar_graphic, percents, '%', suffix)),
+
+    if iteration == total:
+        sys.stdout.write('\n')
+    sys.stdout.flush()
+
+def fetch_departure_time():
     """ Get user's departure time; either now or in the future.
 
     This information will be passed to Dark Sky to fetch weather information
     at origin + departure time; Dark Sky accepts either a Unix time or a string
-    of the form YYYY]-[MM]-[DD]T[HH]:[MM]. In the latter case, if no timezone
+    of the form [YYYY]-[MM]-[DD]T[HH]:[MM]. In the latter case, if no timezone
     information is included, the time is interpreted (by Dark Sky)
     as local time with respect to the location given.
+
+    Future feature: limit return to one form.
 
     Parameters:
     none
@@ -27,31 +54,29 @@ def get_departure_time():
     dept_time (int or str): Current Unix time or a .isoformat() style string
     [YYYY]-[MM]-[DD]T[HH]:[MM]
     """
-    print('\n 1. Leave now. \n 2. Specify future departure time.')
+    print('\n1. Leave now. \n2. Specify future departure time.')
     while True:
         try:
             depart_now = int(input())
         except ValueError:
             print('Oops! That was not a valid choice. Try again...')
         else:
-            if depart_now in range(1, 3):
+            if depart_now in [1, 2]:
                 break
             else:
                 print('Oops! That was not a valid choice. Try again...')
                 continue
     if depart_now == 1:
-        print('Thanks! Weather data will be based on an immediate departure.')
+        print('Weather data will be based on an immediate departure.')
         departure_datetime = int(time.time())
     if depart_now == 2:
-        print('Thanks! Let\'s get your departure date and time.')
-        departure_year = input('Please enter your departure year YYYY: ')
-        departure_month = input('Please enter your departure month MM: ')
-        departure_day = input('Please enter your departure day DD: ')
-        departure_hour = input('Please enter your departure hour HH, [0,23]: ')
-        departure_minute = input('Please enter your departure day MM: ')
-        departure_date = departure_year+'-'+departure_month+'-'+departure_day
-        departure_time = departure_hour+':'+departure_minute
-        departure_datetime = departure_date+'T'+departure_time+':00'
+        print("Let's get your departure date and time.")
+        departure_date = input('Please enter your departure date as MM/DD/YY ... ')
+        departure_time = input('Please enter your departure time as HH:MM ... ')
+        departure_datetime_raw = dt.strptime(departure_date+departure_time, "%m/%d/%y%H:%M")
+        departure_datetime_printable = departure_datetime_raw.strftime("%A, %B %d %Y, %I:%M%p")
+        print("\nLocal departure time recorded as {}".format(departure_datetime_printable))
+        departure_datetime = departure_datetime_raw.isoformat()
     return departure_datetime
 
 def fetch_directions_summary(origin, destination, key):
@@ -79,13 +104,13 @@ def fetch_directions_summary(origin, destination, key):
     route_steps = route['routes'][0]['legs'][0]['steps']
     num_steps = len(route_steps)
     keys = range(num_steps)
-    directions_summary = {}
+    directions_summary = []
     for i in keys:
         instruction = route_steps[i]['maneuver']['instruction']
         duration = route_steps[i]['duration'] # in seconds
         distance = route_steps[i]['distance'] # in meters
         location = route_steps[i]['maneuver']['location']
-        directions_summary[i] = [instruction, duration, distance, location]
+        directions_summary.append([instruction, duration, distance, location])
     return directions_summary
 
 def fetch_weather_summary(latitude, longitude, time, key):
@@ -109,78 +134,63 @@ def fetch_weather_summary(latitude, longitude, time, key):
         temperature in Fahrenheit (as dictated by the variable units = 'us').
     """
     inputs = key, latitude, longitude
-    wx_full = forecast(*inputs, time=time, units='us')
-    wx_current = wx_full['currently']
-    return wx_current['summary'], int(wx_current['temperature']), wx_full.time
+    weather_full = forecast(*inputs, time=time, units='us')
+    weather_current = weather_full['currently']
+    return weather_current['summary'], int(weather_current['temperature']), weather_full.time
 
-def location_candidates(raw_location, key):
+def fetch_location_candidates(raw_location, key):
     """
     Returns a dictionary of possible locations.
 
-    With the goal of correctly interpreting a user's input location input, this
+    With the goal of correctly interpreting a user's location input, this
     function utilizes the Geocoder feature of Mapbox to return a dictionary of
-    possible candidates for the users intended input locationself.
+    possible candidates for the users intended input location.
 
     Parameters:
     user_input (str): A location, such as street address or landmark.
 
     Returns:
-    candidates (dict): A dictionary encoding the responses from Mapbox based on
-    the user's input. Keys are integers 1, 2, ...; values are the precise place
-    names for the fetched locations.
+    candidates (list): A list encoding the responses from Mapbox based on
+    the user's input.
     """
     geocoder = Geocoder(access_token=key)
     response = geocoder.forward(str(raw_location), limit=10)
     collection = response.json()
     # The 'features' key tracks the returned data for each possible location.
-    # In particular, the 'place_name' of a feature houses the address, and
-    # will be used to display back the the user for verification.  We construct
-    # a dictionary to meaningfully display each place_name to the user.
-    #
-    # For conveinence, the dictionary keys begin at 1; this seems more
-    # intuitive from a ui perspective.
     num_features = len(collection['features'])
-    candidates = {}
-    keys = range(1, num_features+1)
-    for i in keys:
-        candidates[i] = collection['features'][i-1]
+    candidates = []
+    for i in range(num_features):
+        candidates.append(collection['features'][i])
     return candidates
 
-def display_and_verify(candidate_dict):
+def verify_input_location(candidates):
     """
     Presents a dictionary of potential locations to the user.
     """
-    print('The following locations were returned based on your entry.')
-    # We create a copy of the candidate dictionary to display to the user,
-    # appending an option to indicate that no option best meets the user's
-    # intended location.
-    displayed_candidate_dict = copy.copy(candidate_dict)
-    # Removing these next line for now;  No need display a different dictionary.
-    # I will adjust this once I know how
-    # the final veresion will handle needing the user to add more specificity
-    # to the location information.
-    #displayed_candidate_dict[str(len(candidate_dict)+1)] = 'None of these are right.'
-    print("\n".join("{}: {}".format(k, v['place_name']) for k, v in displayed_candidate_dict.items()))
-    print('\n')
+    print('The following locations were returned based on your entry:\n')
+    for counter, value in enumerate(candidates, 1):
+        # In particular, the 'place_name' of a feature houses the address, and
+        # will be used to display back the user for verification.
+        print("{}: {}".format(counter, value['place_name']))
     while True:
         try:
-            user_choice = int(input('Which option best reflects your intended location? '))
+            user_choice = int(input('\nWhich option best reflects your intended location? '))
         except ValueError:
             print('Oops! That was not a valid choice. Try again...')
         else:
-            if user_choice in range(1, len(displayed_candidate_dict)+1):
+            if user_choice - 1 in range(len(candidates)):
                 break
             else:
                 print('Oops! That was not a valid choice. Try again...')
                 continue
-    return candidate_dict[user_choice]
-
-#create calendar month number -> name dictionary
-month_names = dict((v,k) for v,k in enumerate(calendar.month_abbr))
+    return candidates[user_choice-1]
 
 def route_weather():
+    """ Method for obtaining driving directions paired with weather conditions
+    at each route step.
+    """
     # opening
-    sp.call('clear',shell=True)
+    sp.call('clear', shell=True)
     print('Welcome to Route Weather!')
     print('\nMap data from Mapbox (mapbox.com)')
     print('Powered by Dark Sky (darksky.net/poweredby/)')
@@ -190,24 +200,19 @@ def route_weather():
     print('\nTo begin, let\'s get your starting point:')
     raw_origin = input('Starting location: ')
     print('\nLet\'s make sure we understood that location correctly.\n')
-    origin_dict = location_candidates(raw_origin, mapbox_token)
-    origin_checked = display_and_verify(origin_dict)
+    origin_cand_list = fetch_location_candidates(raw_origin, mapbox_token)
+    origin_checked = verify_input_location(origin_cand_list)
     print('\nNext, let\'s get your destination:')
     raw_destination = input('Destination: ')
     print('\nAgain, let\'s double check.\n')
-    destination_dict = location_candidates(raw_destination, mapbox_token)
-    destination_checked = display_and_verify(destination_dict)
+    destination_cand_list = fetch_location_candidates(raw_destination, mapbox_token)
+    destination_checked = verify_input_location(destination_cand_list)
 
     # fetch departure time
-    print('\nNow for information about your departure time:\n')
-    departure_time = get_departure_time()
-    if isinstance(departure_time, int):
-        print('Immediate departure time recorded.')
-    else:
-        departure_month_name = month_names[int(departure_time[5:7])]
-        print('\nLocal departure time recorded as {} {}, {} at {}'.format(departure_month_name, int(departure_time[8:10]), departure_time[0:4], departure_time[11:16]))
+    print('\nNow for information about your departure time:')
+    departure_time = fetch_departure_time()
 
-    print('\nFetching directions and weather data at each step...')
+    print('\nFetching directions...')
     # fetch directions
     directions_summary = fetch_directions_summary(origin_checked, destination_checked, mapbox_token)
 
@@ -215,21 +220,25 @@ def route_weather():
     directions_output = copy.deepcopy(directions_summary)
     for i in range(len(directions_summary)):
         del directions_output[i][-1]
+    print("\nFetching weather data at each route step...")
 
     # fetch weather at starting point & departure time
     coords = list(reversed(origin_checked['center']))
-    wx = fetch_weather_summary(coords[0], coords[1], departure_time, darksky_token)
-    directions_output[1].extend((wx[0], wx[1]))
+    departure_weather = fetch_weather_summary(coords[0], coords[1], departure_time, darksky_token)
+    directions_output[0].extend((departure_weather[0], departure_weather[1]))
 
     #fetch the rest of the weather data
-    waypoint_time = wx[2] #posix departure_time, timezone aware
-    for i in range (1, len(directions_summary)):
-        waypoint_time += round(directions_summary[i][1])
-        waypoint_coords = list(reversed(directions_summary[i][3]))
-        waypoint_wx = fetch_weather_summary(waypoint_coords[0], waypoint_coords[1], waypoint_time, darksky_token)
-        directions_output[i].extend((waypoint_wx[0], waypoint_wx[1]))
+    waypoint_time = departure_weather[2] #posix time
+    for counter, value in enumerate(directions_summary, 1):
+        print_progress(counter, len(directions_summary))
+        #print(counter, len(directions_summary))
+        waypoint_time += round(value[1])
+        waypoint_coords = list(reversed(value[3]))
+        waypoint_weather = fetch_weather_summary(waypoint_coords[0], waypoint_coords[1], waypoint_time, darksky_token)
+        directions_output[counter-1].extend([waypoint_weather[0], waypoint_weather[1]])
 
-    print('\nStep #: instruction, time (sec) to next step, distance (meters) to next step, wx, temp')
-    print("\n".join("{}: {}".format(k+1, v) for k, v in directions_output.items()))
+    print('\nStep #: instruction, time (sec) to next step, distance (meters) to next step, weather, temp')
+    for counter, value in enumerate(directions_output, 1):
+        print("{}: {}".format(counter, value))
 
 route_weather()
