@@ -196,7 +196,7 @@ def convert_distance(meters):
     else: output = (miles, 'mile(s)')
     return output
 
-def route_weather(IS_DEBUG = False):
+def route_weather(IS_DEBUG=False):
     """ Method for obtaining driving directions paired with weather conditions
     at each route step.
     """
@@ -210,7 +210,8 @@ def route_weather(IS_DEBUG = False):
     # fetch & verify starting point and destionation
     print('\nTo begin, let\'s get your starting point:')
     raw_origin = input('Starting location: ')
-    if IS_DEBUG: origin_cand_list = fetch_location_candidates(raw_origin, mapbox_token)
+    if IS_DEBUG:
+        origin_cand_list = fetch_location_candidates(raw_origin, mapbox_token)
     else:
         while True:
             try:
@@ -222,7 +223,8 @@ def route_weather(IS_DEBUG = False):
     origin_checked = verify_input_location(origin_cand_list)
     print('\nNext, let\'s get your destination:')
     raw_destination = input('Destination: ')
-    if IS_DEBUG: destination_cand_list = fetch_location_candidates(raw_destination, mapbox_token)
+    if IS_DEBUG:
+        destination_cand_list = fetch_location_candidates(raw_destination, mapbox_token)
     else:
         while True:
             try:
@@ -263,7 +265,7 @@ def route_weather(IS_DEBUG = False):
         waypoint_coords = list(reversed(value[3]))
         waypoint_weather = fetch_weather_summary(waypoint_coords[0], waypoint_coords[1], waypoint_time, darksky_token)
         directions_output[counter].extend([waypoint_weather[0], waypoint_weather[1]])
-    print_progress(1,1)
+    print_progress(1, 1)
 
     #change the time format to HH:MM:SS and convert meters to miles, feet
     for i in directions_output:
