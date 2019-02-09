@@ -5,7 +5,7 @@ import copy
 import time
 import sys
 import subprocess as sp
-from datetime import datetime as dt
+import datetime
 # third-party package imports
 from mapbox import Geocoder, Directions
 from darksky import forecast
@@ -73,7 +73,7 @@ def fetch_departure_time():
         print("Let's get your departure date and time.")
         departure_date = input('Please enter your departure date as MM/DD/YY ... ')
         departure_time = input('Please enter your departure time as HH:MM ... ')
-        departure_datetime_raw = dt.strptime(departure_date+departure_time, "%m/%d/%y%H:%M")
+        departure_datetime_raw = datetime.datetime.strptime(departure_date+departure_time, "%m/%d/%y%H:%M")
         departure_datetime_printable = departure_datetime_raw.strftime("%A, %B %d %Y, %I:%M%p")
         print("\nLocal departure time recorded as {}".format(departure_datetime_printable))
         departure_datetime = departure_datetime_raw.isoformat()
@@ -237,8 +237,13 @@ def route_weather():
         waypoint_weather = fetch_weather_summary(waypoint_coords[0], waypoint_coords[1], waypoint_time, darksky_token)
         directions_output[counter-1].extend([waypoint_weather[0], waypoint_weather[1]])
 
-    print('\nStep #: instruction, time (sec) to next step, distance (meters) to next step, weather, temp')
-    for counter, value in enumerate(directions_output, 1):
-        print("{}: {}".format(counter, value))
+    #change the time format to HH:MM:SS
+    for i in directions_output:
+        i[1] = str(datetime.timedelta(seconds=int(i[1])))
 
-route_weather()
+    #print('\nStep #: instruction, time (sec) to next step, distance (meters) to next step, weather, temp')
+    #for counter, value in enumerate(directions_output, 1):
+    #    print("{}: {}".format(counter, value))
+    return directions_output
+
+#route_weather()
