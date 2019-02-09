@@ -200,70 +200,76 @@ def route_weather(IS_DEBUG = False):
     """ Method for obtaining driving directions paired with weather conditions
     at each route step.
     """
-    while True:
-        try:
-            # opening
-            sp.call('clear', shell=True)
-            print('Welcome to Route Weather!')
-            print('\nMap data from Mapbox (mapbox.com)')
-            print('Powered by Dark Sky (darksky.net/poweredby/)')
-            time.sleep(1)
+    # opening
+    sp.call('clear', shell=True)
+    print('Welcome to Route Weather!')
+    print('\nMap data from Mapbox (mapbox.com)')
+    print('Powered by Dark Sky (darksky.net/poweredby/)')
+    time.sleep(1)
 
-            # fetch & verify starting point and destionation
-            print('\nTo begin, let\'s get your starting point:')
-            raw_origin = input('Starting location: ')
-            print('\nLet\'s make sure we understood that location correctly.\n')
-            origin_cand_list = fetch_location_candidates(raw_origin, mapbox_token)
-            origin_checked = verify_input_location(origin_cand_list)
-            print('\nNext, let\'s get your destination:')
-            raw_destination = input('Destination: ')
-            print('\nAgain, let\'s double check.\n')
-            destination_cand_list = fetch_location_candidates(raw_destination, mapbox_token)
-            destination_checked = verify_input_location(destination_cand_list)
+    # fetch & verify starting point and destionation
+    print('\nTo begin, let\'s get your starting point:')
+    raw_origin = input('Starting location: ')
+    if IS_DEBUG: origin_cand_list = fetch_location_candidates(raw_origin, mapbox_token)
+    else:
+        while True:
+            try:
+                origin_cand_list = fetch_location_candidates(raw_origin, mapbox_token)
+                continue
+            except KeyError:
+                print("\nSomething went wrong. Let's  try again...")
+    print('\nLet\'s make sure we understood that location correctly.\n')
+    origin_checked = verify_input_location(origin_cand_list)
+    print('\nNext, let\'s get your destination:')
+    raw_destination = input('Destination: ')
+    if IS_DEBUG: destination_cand_list = fetch_location_candidates(raw_destination, mapbox_token)
+    else:
+        while True:
+            try:
+                destination_cand_list = fetch_location_candidates(raw_destination, mapbox_token)
+                continue
+            except KeyError:
+                print("\nSomething went wrong. Let's  try again...")
+    print('\nAgain, let\'s double check.\n')
+    destination_checked = verify_input_location(destination_cand_list)
 
-            # fetch departure time
-            print('\nNow for information about your departure time:')
-            departure_time = fetch_departure_time()
+    # fetch departure time
+    print('\nNow for information about your departure time:')
+    departure_time = fetch_departure_time()
 
-            print('\nFetching directions...')
-            # fetch directions
-            directions_summary = fetch_directions_summary(origin_checked, destination_checked, mapbox_token)
+    print('\nFetching directions...')
+    # fetch directions
+    directions_summary = fetch_directions_summary(origin_checked, destination_checked, mapbox_token)
 
-            #create the output dictionary
-            directions_output = copy.deepcopy(directions_summary)
-            for i in range(len(directions_summary)):
-                del directions_output[i][-1]
-            print("\nFetching weather data at each route step...")
-            print_progress(0, len(directions_summary))
+    #create the output dictionary
+    directions_output = copy.deepcopy(directions_summary)
+    for i in range(len(directions_summary)):
+        del directions_output[i][-1]
+    print("\nFetching weather data at each route step...")
+    print_progress(0, len(directions_summary))
 
-            # fetch weather at starting point & departure time
-            coords = list(reversed(origin_checked['center']))
-            departure_weather = fetch_weather_summary(coords[0], coords[1], departure_time, darksky_token)
-            directions_output[0].extend((departure_weather[0], departure_weather[1]))
-            #print_progress(1, len(directions_summary))
+    # fetch weather at starting point & departure time
+    coords = list(reversed(origin_checked['center']))
+    departure_weather = fetch_weather_summary(coords[0], coords[1], departure_time, darksky_token)
+    directions_output[0].extend((departure_weather[0], departure_weather[1]))
+    #print_progress(1, len(directions_summary))
 
-            #fetch the rest of the weather data
-            waypoint_time = departure_weather[2] #posix time
-            for counter, value in enumerate(directions_summary[1:], 1):
-                print_progress(counter, len(directions_summary))
-                #print(counter, len(directions_summary))
-                waypoint_time += round(value[1])
-                waypoint_coords = list(reversed(value[3]))
-                waypoint_weather = fetch_weather_summary(waypoint_coords[0], waypoint_coords[1], waypoint_time, darksky_token)
-                directions_output[counter].extend([waypoint_weather[0], waypoint_weather[1]])
-            print_progress(1,1)
+    #fetch the rest of the weather data
+    waypoint_time = departure_weather[2] #posix time
+    for counter, value in enumerate(directions_summary[1:], 1):
+        print_progress(counter, len(directions_summary))
+        #print(counter, len(directions_summary))
+        waypoint_time += round(value[1])
+        waypoint_coords = list(reversed(value[3]))
+        waypoint_weather = fetch_weather_summary(waypoint_coords[0], waypoint_coords[1], waypoint_time, darksky_token)
+        directions_output[counter].extend([waypoint_weather[0], waypoint_weather[1]])
+    print_progress(1,1)
 
-            #change the time format to HH:MM:SS and convert meters to miles, feet
-            for i in directions_output:
-                i[1] = str(datetime.timedelta(seconds=int(i[1])))
-                (distance, units) = convert_distance(i[2])
-                i[2] = '{} {}'.format(distance, units)
-
-            #print('\nStep #: instruction, time (sec) to next step, distance (meters) to next step, weather, temp')
-            #for counter, value in enumerate(directions_output, 1):
-            #    print("{}: {}".format(counter, value))
-        except:
-            print('Oops! Something went wrong. Starting over ...')
+    #change the time format to HH:MM:SS and convert meters to miles, feet
+    for i in directions_output:
+        i[1] = str(datetime.timedelta(seconds=int(i[1])))
+        (distance, units) = convert_distance(i[2])
+        i[2] = '{} {}'.format(distance, units)
     return directions_output
 
 #route_weather()
