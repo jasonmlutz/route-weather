@@ -186,8 +186,15 @@ def verify_input_location(candidates):
     return candidates[user_choice-1]
 
 def convert_distance(meters):
-    """ Converts distance in meters to a string of the form miles:feet.
+    """ Converts distance in meters to miles or feet, depending on whether the
+    distance is above 1 mile.
     """
+    feet = int(meters*3.281)
+    miles = round(feet/5280, 1)
+    if miles < 0.1:
+        output = (feet, 'feet')
+    else: output = (miles, 'mile(s)')
+    return output
 
 def route_weather():
     """ Method for obtaining driving directions paired with weather conditions
@@ -244,9 +251,11 @@ def route_weather():
         directions_output[counter].extend([waypoint_weather[0], waypoint_weather[1]])
     print_progress(1,1)
 
-    #change the time format to HH:MM:SS
+    #change the time format to HH:MM:SS and convert meters to miles + feet
     for i in directions_output:
         i[1] = str(datetime.timedelta(seconds=int(i[1])))
+        (distance, units) = convert_distance(i[2])
+        i[2] = '{} {}'.format(distance, units)
 
     #print('\nStep #: instruction, time (sec) to next step, distance (meters) to next step, weather, temp')
     #for counter, value in enumerate(directions_output, 1):
