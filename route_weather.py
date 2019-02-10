@@ -113,9 +113,11 @@ def fetch_directions_summary(origin, destination, key, is_debug=False):
     Returns:
     directions_summary (list): a list of length n-1, where n is the
     number of steps in the directions (arriving at the destination counts
-    as one step); list elements are lists (four items) of the form instruction, duration
-    to next route step (in seconds), distance to next route step (in meters),
-    location of current step.
+    as one step); list elements are lists (of length 4) of the form
+        [instruction,
+        duration to next route step (in seconds),
+        distance to next route step (in meters),
+        location of current step].
     """
     service = Directions(access_token=key)
     response = service.directions([origin, destination], profile='mapbox/driving', steps=True)
@@ -192,7 +194,7 @@ def fetch_location_candidates(raw_location, key):
 
 def verify_input_location(candidates):
     """
-    Presents a dictionary of potential locations to the user.
+    Presents a list of potential locations to the user.
     """
     print("The following locations were returned based on your entry:\n")
     for counter, value in enumerate(candidates, 1):
@@ -223,9 +225,23 @@ def convert_distance(meters):
     else: output = (miles, 'mile(s)')
     return output
 
-def route_weather(is_debug=False):
+def route_weather(is_debug=False, verbose=False):
     """ Method for obtaining driving directions paired with weather conditions
     at each route step.
+
+    Parameters:
+    is_debug (boolean): optional parameter for debugging; if True, try/except
+        calls are skipped in favor of printing the relevant stack trace
+    verbose (boolean): optional parameter; if True, prints the directions/weather
+        in addition to returning the output of the function
+
+    Returns:
+    directions_output (list): list elements are lists (of length ??) of the form
+        [driving instruction (str),
+         time to next step (str, in the form HH:MM:SS),
+         distance to the next step (str, in miles or feet, given by convert_distance)
+         weather conditions at the step (str)
+         temperature at the step (int, in degrees Fahrenheit)].
     """
     # opening
     sp.call('clear', shell=True)
@@ -234,8 +250,8 @@ def route_weather(is_debug=False):
     print("Powered by Dark Sky (darksky.net/poweredby/)")
     time.sleep(1)
     print("\nBased on your inputs of origin, destination, and departure time,")
-    print("Route Weather will display driving directions paired with the weather ")
-    print("conditions you can expect when you complete each step in the directions!")
+    print("Route Weather will generate driving directions paired with the weather conditions")
+    print("you can expect at the time and location for each step in the directions!")
     time.sleep(2)
 
     # fetch & verify starting point and destionation
@@ -251,7 +267,7 @@ def route_weather(is_debug=False):
                 break
             except KeyError: # if, for example, the user presses enter without
                              # entering a location
-                print("\nSomething went wrong interpreting your location input. Let's  try again...")
+                print("\nSomething went wrong interpreting your location input. Let's try again...")
     print_ds("Let's make sure we understood that location correctly.")
     origin_checked = verify_input_location(origin_cand_list)
     print("\nNext, let's get your destination:")
@@ -266,7 +282,7 @@ def route_weather(is_debug=False):
                 break
             except KeyError: # if, for example, the user presses enter without
                              # entering a location
-                print_ds("Something went wrong interpreting your location input. Let's  try again...")
+                print_ds("Something went wrong interpreting your location input. Let's try again...")
     print_ds("Again, let's double check.")
     destination_checked = verify_input_location(destination_cand_list)
 
@@ -281,10 +297,12 @@ def route_weather(is_debug=False):
     directions_output = copy.deepcopy(directions_summary)
     for i in range(len(directions_summary)):
         del directions_output[i][-1]
-    print("\nFetching weather data at each route step...")
-    print_progress(0, len(directions_summary))
+        print_progress(i, len(directions_summary))
+    print_progress(1,1)
 
     # fetch weather at starting point & departure time
+    print("\n\nFetching weather data at each route step...")
+    print_progress(0, len(directions_summary))
     coords = list(reversed(origin_checked['center']))
     departure_weather = fetch_weather_summary(coords[0], coords[1], departure_time, darksky_token)
     directions_output[0].extend((departure_weather[0], departure_weather[1]))
@@ -304,6 +322,13 @@ def route_weather(is_debug=False):
         i[1] = str(datetime.timedelta(seconds=int(i[1])))
         (distance, units) = convert_distance(i[2])
         i[2] = '{} {}'.format(distance, units)
+
+    # optionally print
+    if verbose:
+        for i in range(len(directions_output)):
+            print("{}: {}".format(i+1, directions_output[i]))
+
+    # and we're done!
     return directions_output
 
 a = route_weather()
