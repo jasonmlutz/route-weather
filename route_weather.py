@@ -36,7 +36,14 @@ def print_progress(iteration, total, prefix='', suffix='', decimals=1, bar_lengt
         sys.stdout.write('\n')
     sys.stdout.flush()
 
-def fetch_departure_time(IS_DEBUG=False):
+def print_ds(printed_string):
+    """
+    Print an input string in double-space (ds) format, i.e. new lines before
+    and after.
+    """
+    print("\n"+str(printed_string)+"\n")
+
+def fetch_departure_time(is_debug=False):
     """ Get user's departure time; either now or in the future.
 
     This information will be passed to Dark Sky to fetch weather information
@@ -71,7 +78,7 @@ def fetch_departure_time(IS_DEBUG=False):
         departure_datetime = int(time.time())
     if depart_now == 2:
         print("Let's get your departure date and time.")
-        if IS_DEBUG:
+        if is_debug:
             departure_date = input('Please enter your departure date as MM/DD/YY ... ')
             departure_time = input('Please enter your departure time as HH:MM ... ')
             departure_datetime_raw = datetime.datetime.strptime(departure_date+departure_time, "%m/%d/%y%H:%M")
@@ -88,7 +95,7 @@ def fetch_departure_time(IS_DEBUG=False):
         departure_datetime = departure_datetime_raw.isoformat()
     return departure_datetime
 
-def fetch_directions_summary(origin, destination, key, IS_DEBUG=False):
+def fetch_directions_summary(origin, destination, key, is_debug=False):
     """
     Fetch driving directions using Mapbox api.
 
@@ -103,16 +110,16 @@ def fetch_directions_summary(origin, destination, key, IS_DEBUG=False):
         https://docs.mapbox.com/help/glossary/access-token/
 
     Returns:
-    directions_summary (dict): keys are integers 0, 1, 2, ... n-1, where n is the
+    directions_summary (list): a list of length n-1, where n is the
     number of steps in the directions (arriving at the destination counts
-    as one step); values are lists (four items) of the form instruction, duration
+    as one step); list elements are lists (four items) of the form instruction, duration
     to next route step (in seconds), distance to next route step (in meters),
     location of current step.
     """
     service = Directions(access_token=key)
     response = service.directions([origin, destination], profile='mapbox/driving', steps=True)
     route = response.json()
-    if IS_DEBUG:
+    if is_debug:
         route_steps = route['routes'][0]['legs'][0]['steps']
     else:
         try:
@@ -120,10 +127,9 @@ def fetch_directions_summary(origin, destination, key, IS_DEBUG=False):
         except IndexError:
             print("\nSomething went wrong when fetching directions ....")
             return
-    num_steps = len(route_steps)
-    keys = range(num_steps)
     directions_summary = []
-    for i in keys:
+    num_steps = len(route_steps)
+    for i in range(num_steps):
         instruction = route_steps[i]['maneuver']['instruction']
         duration = route_steps[i]['duration'] # in seconds
         distance = route_steps[i]['distance'] # in meters
@@ -145,6 +151,7 @@ def fetch_weather_summary(latitude, longitude, time, key):
         option is of the structure optained from int(time.time()); the latter
         as could be obtained from from datetime.datetime(YYYY, MM, DD,
         HH, MM, SS).isoformat().
+    key (str): Dark Sky api token. More info at https://darksky.net/dev
 
     Returns:
     A tuple. The first element is a short summary of the weather conditions
@@ -214,7 +221,7 @@ def convert_distance(meters):
     else: output = (miles, 'mile(s)')
     return output
 
-def route_weather(IS_DEBUG=False):
+def route_weather(is_debug=False):
     """ Method for obtaining driving directions paired with weather conditions
     at each route step.
     """
@@ -227,7 +234,7 @@ def route_weather(IS_DEBUG=False):
 
     # fetch & verify starting point and destionation
     print("\nTo begin, let's get your starting point:")
-    if IS_DEBUG:
+    if is_debug:
         raw_origin = input('Starting location: ')
         origin_cand_list = fetch_location_candidates(raw_origin, mapbox_token)
     else:
@@ -238,10 +245,10 @@ def route_weather(IS_DEBUG=False):
                 break
             except KeyError:
                 print("\nSomething went wrong interpreting your location input. Let's  try again...")
-    print("\nLet's make sure we understood that location correctly.\n")
+    print_ds("Let's make sure we understood that location correctly.")
     origin_checked = verify_input_location(origin_cand_list)
     print("\nNext, let's get your destination:")
-    if IS_DEBUG:
+    if is_debug:
         raw_destination = input('Destination: ')
         destination_cand_list = fetch_location_candidates(raw_destination, mapbox_token)
     else:
@@ -251,17 +258,17 @@ def route_weather(IS_DEBUG=False):
                 destination_cand_list = fetch_location_candidates(raw_destination, mapbox_token)
                 break
             except KeyError:
-                print("\nSomething went wrong interpreting your location input. Let's  try again...\n")
-    print("\nAgain, let's double check.\n")
+                print_ds("Something went wrong interpreting your location input. Let's  try again...")
+    print_ds("Again, let's double check.")
     destination_checked = verify_input_location(destination_cand_list)
 
     # fetch departure time
     print('\nNow for information about your departure time:')
-    departure_time = fetch_departure_time(IS_DEBUG=IS_DEBUG)
+    departure_time = fetch_departure_time(is_debug=is_debug)
 
     print('\nFetching directions...')
     # fetch directions
-    directions_summary = fetch_directions_summary(origin_checked, destination_checked, mapbox_token, IS_DEBUG=IS_DEBUG)
+    directions_summary = fetch_directions_summary(origin_checked, destination_checked, mapbox_token, is_debug=is_debug)
     #create the output dictionary
     directions_output = copy.deepcopy(directions_summary)
     for i in range(len(directions_summary)):
