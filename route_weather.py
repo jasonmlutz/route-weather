@@ -36,7 +36,7 @@ def print_progress(iteration, total, prefix='', suffix='', decimals=1, bar_lengt
         sys.stdout.write('\n')
     sys.stdout.flush()
 
-def fetch_departure_time():
+def fetch_departure_time(IS_DEBUG = False):
     """ Get user's departure time; either now or in the future.
 
     This information will be passed to Dark Sky to fetch weather information
@@ -71,15 +71,24 @@ def fetch_departure_time():
         departure_datetime = int(time.time())
     if depart_now == 2:
         print("Let's get your departure date and time.")
-        departure_date = input('Please enter your departure date as MM/DD/YY ... ')
-        departure_time = input('Please enter your departure time as HH:MM ... ')
-        departure_datetime_raw = datetime.datetime.strptime(departure_date+departure_time, "%m/%d/%y%H:%M")
+        if IS_DEBUG == True:
+            departure_date = input('Please enter your departure date as MM/DD/YY ... ')
+            departure_time = input('Please enter your departure time as HH:MM ... ')
+            departure_datetime_raw = datetime.datetime.strptime(departure_date+departure_time, "%m/%d/%y%H:%M")
+        else:
+            while True:
+                try:
+                    departure_date = input('Please enter your departure date as MM/DD/YY ... ')
+                    departure_time = input('Please enter your departure time as HH:MM ... ')
+                    departure_datetime_raw = datetime.datetime.strptime(departure_date+departure_time, "%m/%d/%y%H:%M")
+                    break
+                except ValueError: print("Something went wrong with your date/time input(s). Let's try again...")
         departure_datetime_printable = departure_datetime_raw.strftime("%A, %B %d %Y, %I:%M%p")
         print("\nLocal departure time recorded as {}".format(departure_datetime_printable))
         departure_datetime = departure_datetime_raw.isoformat()
     return departure_datetime
 
-def fetch_directions_summary(origin, destination, key):
+def fetch_directions_summary(origin, destination, key, IS_DEBUG = False):
     """
     Fetch driving directions using Mapbox api.
 
@@ -101,7 +110,14 @@ def fetch_directions_summary(origin, destination, key):
     service = Directions(access_token=key)
     response = service.directions([origin, destination], profile='mapbox/driving', steps=True)
     route = response.json()
-    route_steps = route['routes'][0]['legs'][0]['steps']
+    if IS_DEBUG == True:
+        route_steps = route['routes'][0]['legs'][0]['steps']
+    else:
+        try:
+            route_steps = route['routes'][0]['legs'][0]['steps']
+        except IndexError:
+            print("\nSomething went wrong when fetching directions ....")
+            return
     num_steps = len(route_steps)
     keys = range(num_steps)
     directions_summary = []
@@ -209,39 +225,41 @@ def route_weather(IS_DEBUG=False):
 
     # fetch & verify starting point and destionation
     print('\nTo begin, let\'s get your starting point:')
-    raw_origin = input('Starting location: ')
     if IS_DEBUG:
+        raw_origin = input('Starting location: ')
         origin_cand_list = fetch_location_candidates(raw_origin, mapbox_token)
     else:
         while True:
             try:
+                raw_origin = input('Starting location: ')
                 origin_cand_list = fetch_location_candidates(raw_origin, mapbox_token)
-                continue
+                break
             except KeyError:
-                print("\nSomething went wrong. Let's  try again...")
+                print("\nSomething went wrong interpreting your location input. Let's  try again...")
     print('\nLet\'s make sure we understood that location correctly.\n')
     origin_checked = verify_input_location(origin_cand_list)
     print('\nNext, let\'s get your destination:')
-    raw_destination = input('Destination: ')
     if IS_DEBUG:
+        raw_destination = input('Destination: ')
         destination_cand_list = fetch_location_candidates(raw_destination, mapbox_token)
     else:
         while True:
             try:
+                raw_destination = input('Destination: ')
                 destination_cand_list = fetch_location_candidates(raw_destination, mapbox_token)
-                continue
+                break
             except KeyError:
-                print("\nSomething went wrong. Let's  try again...")
+                print("\nSomething went wrong interpreting your location input. Let's  try again...\n")
     print('\nAgain, let\'s double check.\n')
     destination_checked = verify_input_location(destination_cand_list)
 
     # fetch departure time
     print('\nNow for information about your departure time:')
-    departure_time = fetch_departure_time()
+    departure_time = fetch_departure_time(IS_DEBUG = IS_DEBUG)
 
     print('\nFetching directions...')
     # fetch directions
-    directions_summary = fetch_directions_summary(origin_checked, destination_checked, mapbox_token)
+    directions_summary = fetch_directions_summary(origin_checked, destination_checked, mapbox_token, IS_DEBUG = IS_DEBUG)
 
     #create the output dictionary
     directions_output = copy.deepcopy(directions_summary)
@@ -274,4 +292,4 @@ def route_weather(IS_DEBUG=False):
         i[2] = '{} {}'.format(distance, units)
     return directions_output
 
-#route_weather()
+a = route_weather()
