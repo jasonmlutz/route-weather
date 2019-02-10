@@ -36,7 +36,7 @@ def print_progress(iteration, total, prefix='', suffix='', decimals=1, bar_lengt
         sys.stdout.write('\n')
     sys.stdout.flush()
 
-def fetch_departure_time(IS_DEBUG = False):
+def fetch_departure_time(IS_DEBUG=False):
     """ Get user's departure time; either now or in the future.
 
     This information will be passed to Dark Sky to fetch weather information
@@ -71,7 +71,7 @@ def fetch_departure_time(IS_DEBUG = False):
         departure_datetime = int(time.time())
     if depart_now == 2:
         print("Let's get your departure date and time.")
-        if IS_DEBUG == True:
+        if IS_DEBUG:
             departure_date = input('Please enter your departure date as MM/DD/YY ... ')
             departure_time = input('Please enter your departure time as HH:MM ... ')
             departure_datetime_raw = datetime.datetime.strptime(departure_date+departure_time, "%m/%d/%y%H:%M")
@@ -88,7 +88,7 @@ def fetch_departure_time(IS_DEBUG = False):
         departure_datetime = departure_datetime_raw.isoformat()
     return departure_datetime
 
-def fetch_directions_summary(origin, destination, key, IS_DEBUG = False):
+def fetch_directions_summary(origin, destination, key, IS_DEBUG=False):
     """
     Fetch driving directions using Mapbox api.
 
@@ -99,6 +99,8 @@ def fetch_directions_summary(origin, destination, key, IS_DEBUG = False):
         geocoder.forward(str(origin_raw)).json()['features'][0], where origin_raw
         is a string corresponding to the origin. This is compatible with the
         returns of the 'input_verification.py' methods.
+    key (str): Mapbox api token. More info about the necessary token at
+        https://docs.mapbox.com/help/glossary/access-token/
 
     Returns:
     directions_summary (dict): keys are integers 0, 1, 2, ... n-1, where n is the
@@ -110,7 +112,7 @@ def fetch_directions_summary(origin, destination, key, IS_DEBUG = False):
     service = Directions(access_token=key)
     response = service.directions([origin, destination], profile='mapbox/driving', steps=True)
     route = response.json()
-    if IS_DEBUG == True:
+    if IS_DEBUG:
         route_steps = route['routes'][0]['legs'][0]['steps']
     else:
         try:
@@ -224,7 +226,7 @@ def route_weather(IS_DEBUG=False):
     time.sleep(1)
 
     # fetch & verify starting point and destionation
-    print('\nTo begin, let\'s get your starting point:')
+    print("\nTo begin, let's get your starting point:")
     if IS_DEBUG:
         raw_origin = input('Starting location: ')
         origin_cand_list = fetch_location_candidates(raw_origin, mapbox_token)
@@ -236,9 +238,9 @@ def route_weather(IS_DEBUG=False):
                 break
             except KeyError:
                 print("\nSomething went wrong interpreting your location input. Let's  try again...")
-    print('\nLet\'s make sure we understood that location correctly.\n')
+    print("\nLet's make sure we understood that location correctly.\n")
     origin_checked = verify_input_location(origin_cand_list)
-    print('\nNext, let\'s get your destination:')
+    print("\nNext, let's get your destination:")
     if IS_DEBUG:
         raw_destination = input('Destination: ')
         destination_cand_list = fetch_location_candidates(raw_destination, mapbox_token)
@@ -250,17 +252,16 @@ def route_weather(IS_DEBUG=False):
                 break
             except KeyError:
                 print("\nSomething went wrong interpreting your location input. Let's  try again...\n")
-    print('\nAgain, let\'s double check.\n')
+    print("\nAgain, let's double check.\n")
     destination_checked = verify_input_location(destination_cand_list)
 
     # fetch departure time
     print('\nNow for information about your departure time:')
-    departure_time = fetch_departure_time(IS_DEBUG = IS_DEBUG)
+    departure_time = fetch_departure_time(IS_DEBUG=IS_DEBUG)
 
     print('\nFetching directions...')
     # fetch directions
-    directions_summary = fetch_directions_summary(origin_checked, destination_checked, mapbox_token, IS_DEBUG = IS_DEBUG)
-
+    directions_summary = fetch_directions_summary(origin_checked, destination_checked, mapbox_token, IS_DEBUG=IS_DEBUG)
     #create the output dictionary
     directions_output = copy.deepcopy(directions_summary)
     for i in range(len(directions_summary)):
