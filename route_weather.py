@@ -61,32 +61,32 @@ def fetch_departure_time(is_debug=False):
     dept_time (int or str): Current Unix time or a .isoformat() style string
     [YYYY]-[MM]-[DD]T[HH]:[MM]
     """
-    print('\n1. Leave now. \n2. Specify future departure time.')
+    print("\n1. Leave now. \n2. Specify future departure time.")
     while True:
         try:
             depart_now = int(input())
         except ValueError:
-            print('Oops! That was not a valid choice. Try again...')
+            print("Oops! That was not a valid choice. Try again...")
         else:
             if depart_now in [1, 2]:
                 break
             else:
-                print('Oops! That was not a valid choice. Try again...')
+                print("Oops! That was not a valid choice. Try again...")
                 continue
     if depart_now == 1:
-        print('Weather data will be based on an immediate departure.')
+        print("Weather data will be based on an immediate departure.")
         departure_datetime = int(time.time())
     if depart_now == 2:
         print("Let's get your departure date and time.")
         if is_debug:
-            departure_date = input('Please enter your departure date as MM/DD/YY ... ')
-            departure_time = input('Please enter your departure time as HH:MM ... ')
+            departure_date = input("Please enter your departure date as MM/DD/YY ... ")
+            departure_time = input("Please enter your departure time as HH:MM ... ")
             departure_datetime_raw = datetime.datetime.strptime(departure_date+departure_time, "%m/%d/%y%H:%M")
         else:
             while True:
                 try:
-                    departure_date = input('Please enter your departure date as MM/DD/YY ... ')
-                    departure_time = input('Please enter your departure time as HH:MM ... ')
+                    departure_date = input("Please enter your departure date as MM/DD/YY ... ")
+                    departure_time = input("Please enter your departure time as HH:MM ... ")
                     departure_datetime_raw = datetime.datetime.strptime(departure_date+departure_time, "%m/%d/%y%H:%M")
                     break
                 except ValueError: print("Something went wrong with your date/time input(s). Let's try again...")
@@ -192,21 +192,21 @@ def verify_input_location(candidates):
     """
     Presents a dictionary of potential locations to the user.
     """
-    print('The following locations were returned based on your entry:\n')
+    print("The following locations were returned based on your entry:\n")
     for counter, value in enumerate(candidates, 1):
         # In particular, the 'place_name' of a feature houses the address, and
         # will be used to display back the user for verification.
         print("{}: {}".format(counter, value['place_name']))
     while True:
         try:
-            user_choice = int(input('\nWhich option best reflects your intended location? '))
+            user_choice = int(input("\nWhich option best reflects your intended location? "))
         except ValueError:
-            print('Oops! That was not a valid choice. Try again...')
+            print("Oops! That was not a valid choice. Try again...")
         else:
             if user_choice - 1 in range(len(candidates)):
                 break
             else:
-                print('Oops! That was not a valid choice. Try again...')
+                print("Oops! That was not a valid choice. Try again...")
                 continue
     return candidates[user_choice-1]
 
@@ -227,20 +227,20 @@ def route_weather(is_debug=False):
     """
     # opening
     sp.call('clear', shell=True)
-    print('Welcome to Route Weather!')
-    print('\nMap data from Mapbox (mapbox.com)')
-    print('Powered by Dark Sky (darksky.net/poweredby/)')
+    print("Welcome to Route Weather!")
+    print("\nMap data from Mapbox (mapbox.com)")
+    print("Powered by Dark Sky (darksky.net/poweredby/)")
     time.sleep(1)
 
     # fetch & verify starting point and destionation
     print("\nTo begin, let's get your starting point:")
     if is_debug:
-        raw_origin = input('Starting location: ')
+        raw_origin = input("Starting location: ")
         origin_cand_list = fetch_location_candidates(raw_origin, mapbox_token)
     else:
         while True:
             try:
-                raw_origin = input('Starting location: ')
+                raw_origin = input("Starting location: ")
                 origin_cand_list = fetch_location_candidates(raw_origin, mapbox_token)
                 break
             except KeyError:
@@ -249,12 +249,12 @@ def route_weather(is_debug=False):
     origin_checked = verify_input_location(origin_cand_list)
     print("\nNext, let's get your destination:")
     if is_debug:
-        raw_destination = input('Destination: ')
+        raw_destination = input("Destination: ")
         destination_cand_list = fetch_location_candidates(raw_destination, mapbox_token)
     else:
         while True:
             try:
-                raw_destination = input('Destination: ')
+                raw_destination = input("Destination: ")
                 destination_cand_list = fetch_location_candidates(raw_destination, mapbox_token)
                 break
             except KeyError:
@@ -263,10 +263,10 @@ def route_weather(is_debug=False):
     destination_checked = verify_input_location(destination_cand_list)
 
     # fetch departure time
-    print('\nNow for information about your departure time:')
+    print("\nNow for information about your departure time:")
     departure_time = fetch_departure_time(is_debug=is_debug)
 
-    print('\nFetching directions...')
+    print("\nFetching directions...")
     # fetch directions
     directions_summary = fetch_directions_summary(origin_checked, destination_checked, mapbox_token, is_debug=is_debug)
     #create the output dictionary
