@@ -4,8 +4,9 @@
 import copy
 import time
 import sys
-import subprocess as sp
 import datetime
+import subprocess as sp
+import pandas as pd
 # third-party package imports
 from mapbox import Geocoder, Directions
 from darksky import forecast
@@ -225,18 +226,20 @@ def convert_distance(meters):
     else: output = (miles, 'mile(s)')
     return output
 
-def route_weather(is_debug=False, verbose=False):
+def route_weather(is_debug=False, verbose=False, csv_output=True):
     """ Method for obtaining driving directions paired with weather conditions
     at each route step.
 
     Parameters:
     is_debug (boolean): optional parameter for debugging; if True, try/except
         calls are skipped in favor of printing the relevant stack trace
-    verbose (boolean): optional parameter; if True, prints the directions/weather
+    verbose (boolean): optional; if True, prints the directions/weather
         in addition to returning the output of the function
+    csv_output (boolean): optional; if True, directions_output is written to a
+        csv file in the cwd. File name formatted as route_weather+timestamp.csv
 
     Returns:
-    directions_output (list): list elements are lists (of length ??) of the form
+    directions_df (pandas dataframe): columns are
         [driving instruction (str),
          time to next step (str, in the form HH:MM:SS),
          distance to the next step (str, in miles or feet, given by convert_distance)
@@ -301,7 +304,7 @@ def route_weather(is_debug=False, verbose=False):
     print_progress(1,1)
 
     # fetch weather at starting point & departure time
-    print("\n\nFetching weather data at each route step...")
+    print("\nFetching weather data at each route step...")
     print_progress(0, len(directions_summary))
     coords = list(reversed(origin_checked['center']))
     departure_weather = fetch_weather_summary(coords[0], coords[1], departure_time, darksky_token)
@@ -328,7 +331,20 @@ def route_weather(is_debug=False, verbose=False):
         for i in range(len(directions_output)):
             print("{}: {}".format(i+1, directions_output[i]))
 
-    # and we're done!
-    return directions_output
+    # build the data frame output
+    column_names = ['instruction', 'duration', 'distance', 'wx conditions', 'temperature']
+    directions_df = pd.DataFrame(directions_output, columns=column_names)
 
-a = route_weather()
+    # optionally output the navigation + weather info to a csv file
+    if csv_output:
+        unix_timestamp = str(int(time.time()))
+        file_name = "rw_"+unix_timestamp+".csv"
+        print("\nWriting data to {} ...".format(file_name))
+        print_progress(0,1)
+        directions_df.to_csv(file_name)
+        print_progress(1,1)
+
+    # and we're done!
+    return directions_df
+
+route_weather()
