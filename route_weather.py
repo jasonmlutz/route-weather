@@ -65,12 +65,12 @@ def fetch_departure_time(is_debug=False):
     while True:
         try:
             depart_now = int(input())
-        except ValueError:
+        except ValueError: # if, for example, user doesn't enter an integer
             print("Oops! That was not a valid choice. Try again...")
         else:
             if depart_now in [1, 2]:
                 break
-            else:
+            else: # if, for example, user enters an integer outside [1,2]
                 print("Oops! That was not a valid choice. Try again...")
                 continue
     if depart_now == 1:
@@ -89,7 +89,8 @@ def fetch_departure_time(is_debug=False):
                     departure_time = input("Please enter your departure time as HH:MM ... ")
                     departure_datetime_raw = datetime.datetime.strptime(departure_date+departure_time, "%m/%d/%y%H:%M")
                     break
-                except ValueError: print("Something went wrong with your date/time input(s). Let's try again...")
+                except ValueError: # bad input format for date and/or time
+                    print("Something went wrong with your date/time input(s). Let's try again...")
         departure_datetime_printable = departure_datetime_raw.strftime("%A, %B %d %Y, %I:%M%p")
         print("\nLocal departure time recorded as {}".format(departure_datetime_printable))
         departure_datetime = departure_datetime_raw.isoformat()
@@ -124,7 +125,8 @@ def fetch_directions_summary(origin, destination, key, is_debug=False):
     else:
         try:
             route_steps = route['routes'][0]['legs'][0]['steps']
-        except IndexError:
+        except IndexError: # if, for example, driving directions requested from
+                           # Boston to London
             print("\nSomething went wrong when fetching directions ....")
             return
     directions_summary = []
@@ -200,12 +202,12 @@ def verify_input_location(candidates):
     while True:
         try:
             user_choice = int(input("\nWhich option best reflects your intended location? "))
-        except ValueError:
+        except ValueError: # input not an integer
             print("Oops! That was not a valid choice. Try again...")
         else:
             if user_choice - 1 in range(len(candidates)):
                 break
-            else:
+            else: # input is an integer but outside of valid range
                 print("Oops! That was not a valid choice. Try again...")
                 continue
     return candidates[user_choice-1]
@@ -231,6 +233,10 @@ def route_weather(is_debug=False):
     print("\nMap data from Mapbox (mapbox.com)")
     print("Powered by Dark Sky (darksky.net/poweredby/)")
     time.sleep(1)
+    print("\nBased on your inputs of origin, destination, and departure time,")
+    print("Route Weather will display driving directions paired with the weather ")
+    print("conditions you can expect when you complete each step in the directions!")
+    time.sleep(2)
 
     # fetch & verify starting point and destionation
     print("\nTo begin, let's get your starting point:")
@@ -243,7 +249,8 @@ def route_weather(is_debug=False):
                 raw_origin = input("Starting location: ")
                 origin_cand_list = fetch_location_candidates(raw_origin, mapbox_token)
                 break
-            except KeyError:
+            except KeyError: # if, for example, the user presses enter without
+                             # entering a location
                 print("\nSomething went wrong interpreting your location input. Let's  try again...")
     print_ds("Let's make sure we understood that location correctly.")
     origin_checked = verify_input_location(origin_cand_list)
@@ -257,7 +264,8 @@ def route_weather(is_debug=False):
                 raw_destination = input("Destination: ")
                 destination_cand_list = fetch_location_candidates(raw_destination, mapbox_token)
                 break
-            except KeyError:
+            except KeyError: # if, for example, the user presses enter without
+                             # entering a location
                 print_ds("Something went wrong interpreting your location input. Let's  try again...")
     print_ds("Again, let's double check.")
     destination_checked = verify_input_location(destination_cand_list)
@@ -266,8 +274,8 @@ def route_weather(is_debug=False):
     print("\nNow for information about your departure time:")
     departure_time = fetch_departure_time(is_debug=is_debug)
 
-    print("\nFetching directions...")
     # fetch directions
+    print("\nFetching directions...")
     directions_summary = fetch_directions_summary(origin_checked, destination_checked, mapbox_token, is_debug=is_debug)
     #create the output dictionary
     directions_output = copy.deepcopy(directions_summary)
@@ -280,18 +288,16 @@ def route_weather(is_debug=False):
     coords = list(reversed(origin_checked['center']))
     departure_weather = fetch_weather_summary(coords[0], coords[1], departure_time, darksky_token)
     directions_output[0].extend((departure_weather[0], departure_weather[1]))
-    #print_progress(1, len(directions_summary))
 
-    #fetch the rest of the weather data
+    #fetch the remaining weather data
     waypoint_time = departure_weather[2] #posix time
     for counter, value in enumerate(directions_summary[1:], 1):
         print_progress(counter, len(directions_summary))
-        #print(counter, len(directions_summary))
         waypoint_time += round(value[1])
         waypoint_coords = list(reversed(value[3]))
         waypoint_weather = fetch_weather_summary(waypoint_coords[0], waypoint_coords[1], waypoint_time, darksky_token)
         directions_output[counter].extend([waypoint_weather[0], waypoint_weather[1]])
-    print_progress(1, 1)
+    print_progress(1, 1) # to print 100% progress
 
     #change the time format to HH:MM:SS and convert meters to miles, feet
     for i in directions_output:
