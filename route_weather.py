@@ -226,7 +226,7 @@ def convert_distance(meters):
     else: output = (miles, 'mile(s)')
     return output
 
-def route_weather(is_debug=False, verbose=False, csv_output=True):
+def route_weather(is_debug=False, verbose=True, csv_output=True):
     """ Method for obtaining driving directions paired with weather conditions
     at each route step.
 
@@ -301,7 +301,7 @@ def route_weather(is_debug=False, verbose=False, csv_output=True):
     for i in range(len(directions_summary)):
         del directions_output[i][-1]
         print_progress(i, len(directions_summary))
-    print_progress(1,1)
+    print_progress(1, 1)
 
     # fetch weather at starting point & departure time
     print("\nFetching weather data at each route step...")
@@ -326,11 +326,6 @@ def route_weather(is_debug=False, verbose=False, csv_output=True):
         (distance, units) = convert_distance(i[2])
         i[2] = '{} {}'.format(distance, units)
 
-    # optionally print
-    if verbose:
-        for i in range(len(directions_output)):
-            print("{}: {}".format(i+1, directions_output[i]))
-
     # build the data frame output
     column_names = ['instruction', 'duration', 'distance', 'wx conditions', 'temperature']
     directions_df = pd.DataFrame(directions_output, columns=column_names)
@@ -340,9 +335,13 @@ def route_weather(is_debug=False, verbose=False, csv_output=True):
         unix_timestamp = str(int(time.time()))
         file_name = "rw_"+unix_timestamp+".csv"
         print("\nWriting data to {} ...".format(file_name))
-        print_progress(0,1)
+        print_progress(0, 1)
         directions_df.to_csv(file_name)
-        print_progress(1,1)
+        print_progress(1, 1)
+
+    # optionally print
+    if verbose:
+        print(directions_df)
 
     # and we're done!
     return directions_df
