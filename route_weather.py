@@ -5,8 +5,8 @@ import time
 import sys
 import datetime
 import subprocess as sp
-import pandas as pd
 # third-party package imports
+import pandas as pd
 from mapbox import Geocoder, Directions
 from darksky import forecast
 # API credentials imports
@@ -29,7 +29,7 @@ def print_progress(iteration, total, prefix='', suffix='', decimals=1, bar_lengt
     str_format = "{0:." + str(decimals) + "f}"
     percents = str_format.format(100 * (iteration / float(total)))
     filled_length = int(round(bar_length * iteration / float(total)))
-    bar_graphic = '█' * filled_length + '-' * (bar_length - filled_length)
+    bar_graphic = '\u2588' * filled_length + '-' * (bar_length - filled_length)
 
     sys.stdout.write('\r%s |%s| %s%s %s' % (prefix, bar_graphic, percents, '%', suffix)),
 
@@ -77,21 +77,18 @@ def fetch_departure_time(is_debug=False):
     if depart_now == 1:
         print("Weather data will be based on an immediate departure.")
         departure_datetime = int(time.time())
-    if depart_now == 2:
+    elif depart_now == 2:
         print("Let's get your departure date and time.")
-        if is_debug:
-            departure_date = input("Please enter your departure date as MM/DD/YY ... ")
-            departure_time = input("Please enter your departure time as HH:MM ... ")
-            departure_datetime_raw = datetime.datetime.strptime(departure_date+departure_time, "%m/%d/%y%H:%M")
-        else:
-            while True:
-                try:
-                    departure_date = input("Please enter your departure date as MM/DD/YY ... ")
-                    departure_time = input("Please enter your departure time as HH:MM ... ")
-                    departure_datetime_raw = datetime.datetime.strptime(departure_date+departure_time, "%m/%d/%y%H:%M")
-                    break
-                except ValueError: # bad input format for date and/or time
-                    print("Something went wrong with your date/time input(s). Let's try again...")
+        while True:
+            try:
+                departure_date = input("Please enter your departure date as MM/DD/YY ... ")
+                departure_time = input("Please enter your departure time as HH:MM ... ")
+                departure_datetime_raw = datetime.datetime.strptime(departure_date+departure_time, "%m/%d/%y%H:%M")
+                break
+            except ValueError: # bad input format for date and/or time
+                print("Something went wrong with your date/time input(s). Let's try again...")
+                if is_debug:
+                    raise
         departure_datetime_printable = departure_datetime_raw.strftime("%A, %B %d %Y, %I:%M%p")
         print("\nLocal departure time recorded as {}".format(departure_datetime_printable))
         departure_datetime = departure_datetime_raw.isoformat()
@@ -123,15 +120,14 @@ def fetch_directions_summary(origin, destination, key, is_debug=False):
     service = Directions(access_token=key)
     response = service.directions([origin, destination], profile='mapbox/driving', steps=True)
     route = response.json()
-    if is_debug:
+    try:
         route_steps = route['routes'][0]['legs'][0]['steps']
-    else:
-        try:
-            route_steps = route['routes'][0]['legs'][0]['steps']
-        except IndexError: # if, for example, driving directions requested from
-                           # Boston to London
-            print("\nSomething went wrong when fetching directions ....")
-            return
+    except IndexError: # if, for example, driving directions requested from
+                       # Boston to London
+        print("\nSomething went wrong when fetching directions ....")
+        if is_debug:
+            raise
+        return
     directions_summary = []
     for step in route_steps:
         instruction = step['maneuver']['instruction']
@@ -203,15 +199,13 @@ def verify_input_location(candidates):
     while True:
         try:
             user_choice = int(input("\nWhich option best reflects your intended location? "))
+            chosen_option = candidates[user_choice-1]
+            break
         except ValueError: # input not an integer
-            print("Oops! That was not a valid choice. Try again...")
-        else:
-            if user_choice - 1 in range(len(candidates)):
-                break
-            else: # input is an integer but outside of valid range
-                print("Oops! That was not a valid choice. Try again...")
-                continue
-    return candidates[user_choice-1]
+            print("Oops! That was not a valid choice. Please enter a whole number...")
+        except IndexError: # input is an integer but outside of valid range
+            print("Oops! That number was not between {} and {}. Try again...".format(1, len(candidates)))
+    return chosen_option
 
 def convert_distance(meters):
     """ Converts distance in meters to miles or feet, depending on whether the
@@ -257,33 +251,29 @@ def route_weather(is_debug=False, verbose=True, csv_output=True):
 
     # fetch & verify starting point and destionation
     print("\nTo begin, let's get your starting point:")
-    if is_debug:
-        raw_origin = input("Starting location: ")
-        origin_cand_list = fetch_location_candidates(raw_origin, mapbox_token)
-    else:
-        while True:
-            try:
-                raw_origin = input("Starting location: ")
-                origin_cand_list = fetch_location_candidates(raw_origin, mapbox_token)
-                break
-            except KeyError: # if, for example, the user presses enter without
-                             # entering a location
-                print("\nSomething went wrong interpreting your location input. Let's try again...")
+    while True:
+        try:
+            raw_origin = input("Starting location: ")
+            origin_cand_list = fetch_location_candidates(raw_origin, mapbox_token)
+            break
+        except KeyError: # if, for example, the user presses enter without
+                         # entering a location
+            print("\nSomething went wrong interpreting your location input. Let's try again...")
+            if is_debug:
+                raise
     print_ds("Let's make sure we understood that location correctly.")
     origin_checked = verify_input_location(origin_cand_list)
     print("\nNext, let's get your destination:")
-    if is_debug:
-        raw_destination = input("Destination: ")
-        destination_cand_list = fetch_location_candidates(raw_destination, mapbox_token)
-    else:
-        while True:
-            try:
-                raw_destination = input("Destination: ")
-                destination_cand_list = fetch_location_candidates(raw_destination, mapbox_token)
-                break
-            except KeyError: # if, for example, the user presses enter without
-                             # entering a location
-                print_ds("Something went wrong interpreting your location input. Let's try again...")
+    while True:
+        try:
+            raw_destination = input("Destination: ")
+            destination_cand_list = fetch_location_candidates(raw_destination, mapbox_token)
+            break
+        except KeyError: # if, for example, the user presses enter without
+                         # entering a location
+            print_ds("Something went wrong interpreting your location input. Let's try again...")
+            if is_debug:
+                raise
     print_ds("Again, let's double check.")
     destination_checked = verify_input_location(destination_cand_list)
 
@@ -339,4 +329,4 @@ def route_weather(is_debug=False, verbose=True, csv_output=True):
     # and we're done!
     return directions_df
 
-route_weather()
+route_weather(is_debug=True)
