@@ -17,7 +17,7 @@ historical trends.
 ```
 pip3 install pandas mapbox darkskylib
 ```
-
 1. Run route-weather:
-```python3 route-weather.py
+```
+python3 route-weather.py
 ```
