@@ -329,4 +329,4 @@ def route_weather(is_debug=False, verbose=True, csv_output=True):
     # and we're done!
     return directions_df
 
-route_weather(is_debug=True)
+route_weather()
