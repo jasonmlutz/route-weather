@@ -1,7 +1,6 @@
 """ The combined version of route_weather.
     """
 # standard imports
-import copy
 import time
 import sys
 import datetime
@@ -18,13 +17,14 @@ from Credentials import mapbox_token, darksky_token
 def print_progress(iteration, total, prefix='', suffix='', decimals=1, bar_length=100):
     """
     Call in a loop to create terminal progress bar
-    @params:
-        iteration   - Required  : current iteration (Int)
-        total       - Required  : total iterations (Int)
-        prefix      - Optional  : prefix string (Str)
-        suffix      - Optional  : suffix string (Str)
-        decimals    - Optional  : positive number of decimals in percent complete (Int)
-        bar_length  - Optional  : character length of bar (Int)
+
+    Parameters:
+    iteration (int): current iteration, required
+    total (int): total iterations, required
+    prefix (str): prefix string, optional
+    suffix (str): suffix string, optional
+    decimals (int): positive number of decimals in percent complete, optional
+    bar_length (int): character length of bar, optional
     """
     str_format = "{0:." + str(decimals) + "f}"
     percents = str_format.format(100 * (iteration / float(total)))
@@ -133,12 +133,11 @@ def fetch_directions_summary(origin, destination, key, is_debug=False):
             print("\nSomething went wrong when fetching directions ....")
             return
     directions_summary = []
-    num_steps = len(route_steps)
-    for i in range(num_steps):
-        instruction = route_steps[i]['maneuver']['instruction']
-        duration = route_steps[i]['duration'] # in seconds
-        distance = route_steps[i]['distance'] # in meters
-        location = route_steps[i]['maneuver']['location']
+    for step in route_steps:
+        instruction = step['maneuver']['instruction']
+        duration = step['duration'] # in seconds
+        distance = step['distance'] # in meters
+        location = step['maneuver']['location']
         directions_summary.append([instruction, duration, distance, location])
     return directions_summary
 
@@ -187,10 +186,9 @@ def fetch_location_candidates(raw_location, key):
     response = geocoder.forward(str(raw_location), limit=10)
     collection = response.json()
     # The 'features' key tracks the returned data for each possible location.
-    num_features = len(collection['features'])
     candidates = []
-    for i in range(num_features):
-        candidates.append(collection['features'][i])
+    for location in collection['features']:
+        candidates.append(location)
     return candidates
 
 def verify_input_location(candidates):
@@ -296,39 +294,34 @@ def route_weather(is_debug=False, verbose=True, csv_output=True):
     # fetch directions
     print("\nFetching directions...")
     directions_summary = fetch_directions_summary(origin_checked, destination_checked, mapbox_token, is_debug=is_debug)
-    #create the output dictionary
-    directions_output = copy.deepcopy(directions_summary)
-    for i in range(len(directions_summary)):
-        del directions_output[i][-1]
-        print_progress(i, len(directions_summary))
-    print_progress(1, 1)
 
     # fetch weather at starting point & departure time
     print("\nFetching weather data at each route step...")
     print_progress(0, len(directions_summary))
     coords = list(reversed(origin_checked['center']))
     departure_weather = fetch_weather_summary(coords[0], coords[1], departure_time, darksky_token)
-    directions_output[0].extend((departure_weather[0], departure_weather[1]))
+    directions_summary[0].extend((departure_weather[0], departure_weather[1]))
 
     #fetch the remaining weather data
     waypoint_time = departure_weather[2] #posix time
-    for counter, value in enumerate(directions_summary[1:], 1):
+    for counter, step in enumerate(directions_summary[1:], 1):
         print_progress(counter, len(directions_summary))
-        waypoint_time += round(value[1])
-        waypoint_coords = list(reversed(value[3]))
+        waypoint_time += round(step[1])
+        waypoint_coords = list(reversed(step[3]))
         waypoint_weather = fetch_weather_summary(waypoint_coords[0], waypoint_coords[1], waypoint_time, darksky_token)
-        directions_output[counter].extend([waypoint_weather[0], waypoint_weather[1]])
+        directions_summary[counter].extend([waypoint_weather[0], waypoint_weather[1]])
     print_progress(1, 1) # to print 100% progress
 
     #change the time format to HH:MM:SS and convert meters to miles, feet
-    for i in directions_output:
-        i[1] = str(datetime.timedelta(seconds=int(i[1])))
-        (distance, units) = convert_distance(i[2])
-        i[2] = '{} {}'.format(distance, units)
+    for step in directions_summary:
+        step[1] = str(datetime.timedelta(seconds=int(step[1])))
+        (distance, units) = convert_distance(step[2])
+        step[2] = '{} {}'.format(distance, units)
 
     # build the data frame output
-    column_names = ['instruction', 'duration', 'distance', 'wx conditions', 'temperature']
-    directions_df = pd.DataFrame(directions_output, columns=column_names)
+    column_names = ['instruction', 'duration', 'distance', 'location', 'wx conditions', 'temperature']
+    directions_df = pd.DataFrame(directions_summary, columns=column_names)
+    del directions_df['location'] # this was used for fetching weather, not ui friendly
 
     # optionally output the navigation + weather info to a csv file
     if csv_output:
