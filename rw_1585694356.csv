@@ -1,0 +1,46 @@
+,instruction,duration,distance,wx conditions,temperature
+0,Head east on West Main Avenue,0:00:28,0.1 mile(s),Mostly Cloudy,47
+1,Turn right onto North Post Street,0:00:16,196 feet,Mostly Cloudy,47
+2,Turn right,0:00:23,0.1 mile(s),Mostly Cloudy,47
+3,Turn right onto North Lincoln Street,0:00:25,193 feet,Mostly Cloudy,47
+4,Turn left onto West Main Avenue,0:00:10,144 feet,Mostly Cloudy,47
+5,Make a slight right,0:00:06,183 feet,Mostly Cloudy,47
+6,Turn left onto Spokane Falls Boulevard,0:00:22,203 feet,Mostly Cloudy,47
+7,Make a slight left onto North Monroe Street,0:01:49,0.4 mile(s),Mostly Cloudy,47
+8,Make a slight right onto West Freeway Avenue,0:00:28,0.1 mile(s),Mostly Cloudy,47
+9,Make a slight left to stay on West Freeway Avenue,0:00:20,187 feet,Mostly Cloudy,47
+10,Take the ramp towards I-90 West,0:00:29,0.2 mile(s),Mostly Cloudy,47
+11,Merge left onto US 395,0:02:16,2.0 mile(s),Mostly Cloudy,47
+12,Keep left onto US 395,0:53:49,56.6 mile(s),Mostly Cloudy,45
+13,Keep right towards US 395 South: Ritzville,1:10:10,73.7 mile(s),Partly Cloudy,46
+14,Take the ramp towards US 395 South: Richland,0:00:50,0.6 mile(s),Partly Cloudy,54
+15,Merge left onto US 395,0:02:04,1.9 mile(s),Partly Cloudy,54
+16,Keep right towards US 395: Pendleton,0:42:32,38.3 mile(s),Partly Cloudy,53
+17,Keep left towards I-84 East: Pendleton,0:00:51,0.8 mile(s),Clear,51
+18,Merge left onto I-84 East,3:37:45,200.7 mile(s),Clear,43
+19,Take exit 3 towards US 95: Payette,0:00:44,0.2 mile(s),Partly Cloudy,41
+20,Turn right onto US 95 South,0:21:09,15.3 mile(s),Partly Cloudy,40
+21,Turn left to stay on US 95 South,0:28:43,18.8 mile(s),Partly Cloudy,38
+22,Turn right to stay on US 95,4:48:47,219.2 mile(s),Partly Cloudy,35
+23,Turn right onto US 95 North,0:05:58,1.6 mile(s),Mostly Cloudy,38
+24,Make a slight left towards US 95 South: Dwight D. Eisenhower Highway,0:01:01,0.4 mile(s),Mostly Cloudy,38
+25,Merge left onto US 95 South,1:31:07,92.6 mile(s),Mostly Cloudy,37
+26,Take exit 83 towards US 95 South: Fallon,0:00:36,0.3 mile(s),Partly Cloudy,38
+27,Continue onto US 95 South,0:35:09,33.1 mile(s),Partly Cloudy,38
+28,Turn right onto US 95,0:00:54,0.2 mile(s),Clear,34
+29,Turn left onto US 95,1:20:38,71.0 mile(s),Partly Cloudy,34
+30,Turn left onto US 95 Truck,0:02:35,1.3 mile(s),Clear,39
+31,Turn left onto US 95,1:04:05,62.5 mile(s),Clear,41
+32,Turn right onto US 6,1:58:57,74.6 mile(s),Clear,53
+33,Turn left onto US 395 South,2:17:36,123.2 mile(s),Clear,59
+34,Keep right onto CA 14,0:49:37,48.6 mile(s),Clear,76
+35,Turn left onto CA 14,1:14:05,68.6 mile(s),Clear,68
+36,Keep left onto CA 14,0:02:05,2.1 mile(s),Clear,70
+37,Keep left onto I-5 South,0:02:07,2.1 mile(s),Clear,72
+38,Keep left onto I-5 South,0:00:15,0.3 mile(s),Clear,74
+39,Keep left onto I-5 South,0:05:20,5.2 mile(s),Clear,74
+40,Keep right onto CA 170 South,0:26:26,16.7 mile(s),Clear,73
+41,Take exit 2C towards Broadway,0:00:27,0.1 mile(s),Clear,71
+42,Turn right onto North Broadway,0:01:00,0.2 mile(s),Clear,71
+43,Turn left,0:00:39,104 feet,Clear,71
+44,You have arrived at your destination,0:00:00,0 feet,Clear,71
