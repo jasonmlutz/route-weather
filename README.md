@@ -14,8 +14,8 @@ historical trends.
 1. Obtain API keys from [Mapbox](https://www.mapbox.com/) and [Dark Sky](https://darksky.net/dev). Enter these keys in `Credentials.py`.
 
 1. Install necessary third-party libraries:
-    
+
     ```pip3 install pandas mapbox darkskylib```
 1. Run route-weather:
-    
+
     ```python3 route-weather.py```
